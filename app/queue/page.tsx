@@ -63,26 +63,26 @@ export default function QueuePage() {
 
   // Watch for match
   const watchForMatch = (userId: string) => {
-    matchSub.current = supabase
-      .channel('match-watch')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'matches',
-        filter: `player1_id=eq.${userId}`,
-      }, (payload) => {
-        handleMatched(payload.new)
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'matches',
-        filter: `player2_id=eq.${userId}`,
-      }, (payload) => {
-        handleMatched(payload.new)
-      })
-      .subscribe()
-  }
+  // Poll every 2 seconds instead of relying on Realtime
+  const pollInterval = setInterval(async () => {
+    const { data: match } = await supabase
+      .from('matches')
+      .select('*')
+      .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (match) {
+      clearInterval(pollInterval)
+      handleMatched(match)
+    }
+  }, 2000)
+
+  // Store it so we can clear it on leave
+  matchSub.current = { unsubscribe: () => clearInterval(pollInterval) }
+}
 
   const handleMatched = (match: any) => {
     setCurrentMatch(match)
@@ -132,7 +132,7 @@ export default function QueuePage() {
   const leaveQueue = async () => {
     if (!user) return
     clearInterval(waitInterval.current)
-    if (matchSub.current) supabase.removeChannel(matchSub.current)
+    if (matchSub.current) matchSub.current.unsubscribe()
     await fetch('/api/match', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
