@@ -29,8 +29,20 @@ export default function QueuePage() {
     const getUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) { router.push('/login'); return }
+
       const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
-      if (!data) { router.push('/'); return }
+
+      if (!data) {
+        const { data: newUser } = await supabase.from('users').insert({
+          id: authUser.id,
+          email: authUser.email,
+          username: authUser.email?.split('@')[0] || 'player',
+        }).select().single()
+        setUser(newUser)
+        setLoading(false)
+        return
+      }
+
       setUser(data)
       setLoading(false)
     }
