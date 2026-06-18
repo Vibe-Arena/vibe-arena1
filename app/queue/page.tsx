@@ -95,20 +95,31 @@ export default function QueuePage() {
   }
 
   const enterQueue = async () => {
-    if (!selectedModel || !user) return
+    if (!selectedModel) return
+    
+    // Get user fresh if not loaded
+    let currentUser = user
+    if (!currentUser) {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) { router.push('/login'); return }
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
+      if (!data) { router.push('/login'); return }
+      currentUser = data
+      setUser(data)
+    }
     setStage('waiting')
 
     // Start wait timer
     waitInterval.current = setInterval(() => setWaitTime(t => t + 1), 1000)
 
     // Watch for match via realtime
-    watchForMatch(user.id)
+    watchForMatch(currentUser.id)
 
     // Call matchmaking API
     const res = await fetch('/api/match', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, model: selectedModel }),
+      body: JSON.stringify({ userId: currentUser.id, model: selectedModel }),
     })
     const data = await res.json()
 
