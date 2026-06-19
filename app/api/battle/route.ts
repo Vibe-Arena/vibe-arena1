@@ -20,8 +20,8 @@ CRITICAL RULES:
       'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'llama3-8b-8192',
-      max_tokens: 8192,
+      model: 'llama-3.1-8b-instant',
+      max_tokens: 4032,
       stream: true,
       messages: [
         { role: 'system', content: systemPrompt },

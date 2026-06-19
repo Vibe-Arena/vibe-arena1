@@ -35,7 +35,7 @@ export default function LoginPage() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ color: '#00f5a0', fontSize: '28px', fontWeight: '800', margin: 0 }}>
+          <h1 style={{ color: '#00d2ff', fontSize: '28px', fontWeight: '800', margin: 0 }}>
             Vibe Arena
           </h1>
           <p style={styles.subtitle}>Log in to your account</p>
@@ -79,9 +79,9 @@ export default function LoginPage() {
           {loading ? 'Logging in...' : 'Log In'}
         </button>
 
-        <p style={{ color: '#555', fontSize: '13px', textAlign: 'center', marginTop: '1.5rem' }}>
+        <p style={{ color: '#000000', fontSize: '13px', textAlign: 'center', marginTop: '1.5rem' }}>
           No account?{' '}
-          <a href="/" style={{ color: '#00f5a0' }}>Sign up</a>
+          <a href="/signup" style={{ color: '#00d2ff' }}>Sign up</a>
         </p>
       </div>
     </div>
@@ -90,25 +90,25 @@ export default function LoginPage() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: '100vh', background: '#0a0a0a',
+    minHeight: '100vh', background: '#f9f9f9',                // Light background
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '2rem', fontFamily: 'sans-serif',
   },
   card: {
-    background: '#111', border: '1px solid #222',
+    background: '#f8fafc', border: '1px solid #787878',        // Matches sign-up border & card background
     borderRadius: '16px', padding: '2.5rem',
     width: '100%', maxWidth: '420px',
   },
-  subtitle: { color: '#666', fontSize: '14px', margin: '0.5rem 0 0' },
+  subtitle: { color: '#64748b', fontSize: '14px', margin: '0.5rem 0 0' },
   field: { marginBottom: '1.25rem' },
-  label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '6px' },
+  label: { display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '6px' },
   input: {
-    width: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a',
-    borderRadius: '8px', padding: '10px 14px', color: '#fff',
+    width: '100%', background: '#ffffff', border: '1px solid #cbd5e1', // White background, soft gray border
+    borderRadius: '8px', padding: '10px 14px', color: '#1a1a1a',        // Dark text for readability
     fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const,
   },
   button: {
-    width: '100%', background: '#00f5a0', color: '#000',
+    width: '100%', background: '#00d2ff', color: '#000',               // Sky blue background
     border: 'none', borderRadius: '8px', padding: '12px',
     fontSize: '15px', fontWeight: '700',
   },
