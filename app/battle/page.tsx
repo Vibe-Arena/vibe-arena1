@@ -81,8 +81,13 @@ return 0
   const timerColor = timeLeft <= 30 ? '#ff4d4d' : timeLeft <= 120 ? '#f5a623' : '#00bfff'
 
   const extractCode = (text: string) => {
-    const match = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
-    return match ? match[0] : ''
+    // Try to extract from markdown code blocks first
+    const mdMatch = text.match(/```(?:html)?\s*(<!DOCTYPE[\s\S]*?<\/html>)\s*```/i)
+    if (mdMatch) return mdMatch[1]
+    // Fall back to raw HTML
+    const rawMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
+    if (rawMatch) return rawMatch[0]
+    return ''
   }
 
   const sendMessage = async () => {
