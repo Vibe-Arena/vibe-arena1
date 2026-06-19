@@ -13,30 +13,67 @@ CRITICAL RULES:
 - Build on top of what the user already has — never start from scratch on follow-up messages
 - Be concise in explanation, generous in code`
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://vibearena.gg',
-      'X-Title': 'Vibe Arena',
-    },
-    body: JSON.stringify({
-      model: model || 'meta-llama/llama-3.1-8b-instruct:free',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ],
-      stream: true,
-    }),
-  })
+  const lastUserMessage = messages[messages.length - 1]?.content || ''
+  const history = messages.slice(0, -1).map((m: any) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }))
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [
+          ...history,
+          { role: 'user', parts: [{ text: lastUserMessage }] }
+        ],
+        generationConfig: { maxOutputTokens: 8192 }
+      }),
+    }
+  )
 
   if (!response.ok) {
     const err = await response.text()
     return NextResponse.json({ error: err }, { status: 500 })
   }
 
-  return new NextResponse(response.body, {
+  // Convert Gemini SSE to OpenAI-compatible SSE format
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      while (reader) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+
+        for (const line of lines) {
+          const data = line.slice(6).trim()
+          if (!data || data === '[DONE]') continue
+          try {
+            const parsed = JSON.parse(data)
+            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || ''
+            if (text) {
+              // Format as OpenAI-compatible SSE so battle page works unchanged
+              const formatted = `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`
+              controller.enqueue(encoder.encode(formatted))
+            }
+          } catch { }
+        }
+      }
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+      controller.close()
+    }
+  })
+
+  return new NextResponse(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
