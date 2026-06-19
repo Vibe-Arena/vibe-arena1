@@ -20,10 +20,13 @@ CRITICAL RULES:
   }))
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': process.env.GEMINI_API_KEY!,
+      },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [
@@ -37,6 +40,7 @@ CRITICAL RULES:
 
   if (!response.ok) {
     const err = await response.text()
+    console.error('Gemini error:', err)
     return NextResponse.json({ error: err }, { status: 500 })
   }
 
