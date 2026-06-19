@@ -63,13 +63,15 @@ export default function QueuePage() {
 
   // Watch for match
   const watchForMatch = (userId: string) => {
-  // Poll every 2 seconds instead of relying on Realtime
+  const joinedAt = new Date().toISOString()
+  
   const pollInterval = setInterval(async () => {
     const { data: match } = await supabase
       .from('matches')
       .select('*')
       .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
       .eq('status', 'active')
+      .gte('created_at', joinedAt)
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
@@ -80,7 +82,6 @@ export default function QueuePage() {
     }
   }, 2000)
 
-  // Store it so we can clear it on leave
   matchSub.current = { unsubscribe: () => clearInterval(pollInterval) }
 }
 
