@@ -150,8 +150,8 @@ export default function QueuePage() {
   }
 
   if (loading) return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <p style={{ color: '#555' }}>Loading...</p>
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <p style={{ color: '#94a3b8' }}>Loading...</p>
     </div>
   )
 
@@ -164,7 +164,7 @@ export default function QueuePage() {
           <a href="/leaderboard" style={styles.navLink}>Leaderboard</a>
         </div>
         <div style={styles.userBtn}>
-          <span style={{ color: '#aaa', fontSize: '13px' }}>{user?.username}</span>
+          <span style={{ color: '#64748b', fontSize: '13px' }}>{user?.username}</span>
         </div>
       </nav>
 
@@ -174,10 +174,10 @@ export default function QueuePage() {
         {stage === 'select' && (
           <>
             <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-              <h1 style={{ color: '#fff', fontSize: '32px', fontWeight: '800', margin: '0 0 8px' }}>
+              <h1 style={{ color: '#0f172a', fontSize: '32px', fontWeight: '800', margin: '0 0 8px' }}>
                 Choose Your AI
               </h1>
-              <p style={{ color: '#555', fontSize: '15px', margin: '0 0 8px' }}>
+              <p style={{ color: '#94a3b8', fontSize: '15px', margin: '0 0 8px' }}>
                 Pick the model you'll use to build. Choose wisely.
               </p>
               {queueCount > 0 && (
@@ -194,7 +194,7 @@ export default function QueuePage() {
                   onClick={() => setSelectedModel(m.id)}
                   style={{
                     ...styles.modelCard,
-                    border: selectedModel === m.id ? `2px solid ${m.color}` : '2px solid #1a1a1a',
+                    border: selectedModel === m.id ? `2px solid ${m.color}` : '2px solid #f1f5f9',
                     cursor: 'pointer',
                   }}
                 >
@@ -204,8 +204,8 @@ export default function QueuePage() {
                   <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: m.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
                     <span style={{ color: m.color, fontSize: '20px', fontWeight: '800' }}>{m.name.charAt(0)}</span>
                   </div>
-                  <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: '700', margin: '0 0 4px' }}>{m.name}</h3>
-                  <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>{m.provider}</p>
+                  <h3 style={{ color: '#0f172a', fontSize: '18px', fontWeight: '700', margin: '0 0 4px' }}>{m.name}</h3>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{m.provider}</p>
                 </div>
               ))}
             </div>
@@ -223,7 +223,7 @@ export default function QueuePage() {
                 Find Opponent →
               </button>
               {!selectedModel && (
-                <p style={{ color: '#333', fontSize: '13px', marginTop: '1rem' }}>Select a model to continue</p>
+                <p style={{ color: '#cbd5e1', fontSize: '13px', marginTop: '1rem' }}>Select a model to continue</p>
               )}
             </div>
           </>
@@ -233,13 +233,13 @@ export default function QueuePage() {
         {stage === 'waiting' && (
           <div style={styles.waitingScreen}>
             <div style={styles.spinner} />
-            <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: '700', margin: '2rem 0 8px' }}>
+            <h2 style={{ color: '#0f172a', fontSize: '24px', fontWeight: '700', margin: '2rem 0 8px' }}>
               Finding an opponent...
             </h2>
-            <p style={{ color: '#555', fontSize: '14px', margin: '0 0 8px' }}>
-              Wait time: <span style={{ color: '#aaa' }}>{formatWait(waitTime)}</span>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 8px' }}>
+              Wait time: <span style={{ color: '#64748b' }}>{formatWait(waitTime)}</span>
             </p>
-            <p style={{ color: '#333', fontSize: '13px', margin: '0 0 2rem' }}>
+            <p style={{ color: '#cbd5e1', fontSize: '13px', margin: '0 0 2rem' }}>
               {queueCount} player{queueCount !== 1 ? 's' : ''} in queue
             </p>
             <div style={styles.modelPill}>
@@ -260,7 +260,7 @@ export default function QueuePage() {
             <h2 style={{ color: '#00bfff', fontSize: '28px', fontWeight: '800', margin: '0 0 8px' }}>
               Opponent Found!
             </h2>
-            <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
               Starting battle in 2 seconds...
             </p>
           </div>
@@ -276,23 +276,23 @@ export default function QueuePage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: '#0a0a0a', fontFamily: 'sans-serif' },
+  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
   navbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 2rem', height: '60px', borderBottom: '1px solid #1a1a1a',
-    background: '#0a0a0a', position: 'sticky', top: 0, zIndex: 100,
+    padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9',
+    background: '#f8fafc', position: 'sticky', top: 0, zIndex: 100,
   },
   logo: { color: '#00bfff', fontWeight: '800', fontSize: '18px', cursor: 'pointer' },
   navLinks: { display: 'flex', gap: '2rem' },
-  navLink: { color: '#666', textDecoration: 'none', fontSize: '14px' },
+  navLink: { color: '#64748b', textDecoration: 'none', fontSize: '14px' },
   userBtn: {
     display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-    padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#111',
+    padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#ffffff',
   },
   main: { padding: '3rem 2rem', maxWidth: '800px', width: '100%', margin: '0 auto' },
   modelsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' },
   modelCard: {
-    background: '#111', borderRadius: '16px', padding: '1.5rem',
+    background: '#ffffff', borderRadius: '16px', padding: '1.5rem',
     position: 'relative', transition: 'border-color 0.15s',
   },
   selectedBadge: {
@@ -310,17 +310,17 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center', minHeight: '60vh', textAlign: 'center',
   },
   spinner: {
-    width: '48px', height: '48px', border: '3px solid #1a1a1a',
+    width: '48px', height: '48px', border: '3px solid #f1f5f9',
     borderTop: '3px solid #00bfff', borderRadius: '50%',
     animation: 'spin 1s linear infinite',
   },
   modelPill: {
-    background: '#111', border: '1px solid #1a1a1a', borderRadius: '999px',
-    padding: '8px 20px', color: '#555', fontSize: '13px', marginBottom: '1.5rem',
+    background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '999px',
+    padding: '8px 20px', color: '#94a3b8', fontSize: '13px', marginBottom: '1.5rem',
   },
   leaveBtn: {
-    background: 'transparent', border: '1px solid #2a2a2a',
-    color: '#555', borderRadius: '8px', padding: '10px 24px',
+    background: 'transparent', border: '1px solid #e2e8f0',
+    color: '#94a3b8', borderRadius: '8px', padding: '10px 24px',
     fontSize: '13px', cursor: 'pointer',
   },
 }

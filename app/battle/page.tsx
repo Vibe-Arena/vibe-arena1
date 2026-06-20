@@ -167,7 +167,7 @@ return 0
       <div style={styles.topBar}>
         <div style={styles.topLeft}>
           <span style={{ color: '#00bfff', fontWeight: '700', fontSize: '14px' }}>Vibe Arena</span>
-          <span style={{ color: '#333', fontSize: '12px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ color: '#cbd5e1', fontSize: '12px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {prompt}
           </span>
         </div>
@@ -177,7 +177,7 @@ return 0
         </div>
 
         <div style={styles.topRight}>
-          <span style={{ color: '#444', fontSize: '12px' }}>Model: <span style={{ color: '#aaa' }}>{modelName}</span></span>
+          <span style={{ color: '#444', fontSize: '12px' }}>Model: <span style={{ color: '#64748b' }}>{modelName}</span></span>
         </div>
       </div>
 
@@ -195,7 +195,7 @@ return 0
           <div style={styles.chatMessages}>
             {messages.length === 0 && (
               <div style={styles.emptyChat}>
-                <p style={{ color: '#333', fontSize: '14px', textAlign: 'center' }}>
+                <p style={{ color: '#cbd5e1', fontSize: '14px', textAlign: 'center' }}>
                   Start building! Describe what you want to create.
                 </p>
               </div>
@@ -204,7 +204,7 @@ return 0
               <div key={i} style={{
                 ...styles.message,
                 alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                background: m.role === 'user' ? '#00bfff20' : '#1a1a1a',
+                background: m.role === 'user' ? '#00bfff20' : '#f1f5f9',
                 border: m.role === 'user' ? '1px solid #00bfff40' : '1px solid #222',
               }}>
                 <p style={{ color: m.role === 'user' ? '#00bfff' : '#ccc', fontSize: '13px', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
@@ -220,8 +220,8 @@ return 0
 
           {/* CHAT STATS */}
           <div style={styles.chatStats}>
-            <span style={{ color: '#333', fontSize: '11px' }}>Prompts: {promptCount}</span>
-            <span style={{ color: '#333', fontSize: '11px' }}>Tokens: {tokenCount.toLocaleString()}</span>
+            <span style={{ color: '#cbd5e1', fontSize: '11px' }}>Prompts: {promptCount}</span>
+            <span style={{ color: '#cbd5e1', fontSize: '11px' }}>Tokens: {tokenCount.toLocaleString()}</span>
             {tokenCount > 90000 && <span style={{ color: '#f5a623', fontSize: '11px' }}>⚠ Approaching limit</span>}
           </div>
 
@@ -276,7 +276,7 @@ return 0
           <div style={styles.rightContent}>
             {currentCode === '' ? (
               <div style={styles.emptyPreview}>
-                <p style={{ color: '#333', fontSize: '14px', textAlign: 'center' }}>
+                <p style={{ color: '#cbd5e1', fontSize: '14px', textAlign: 'center' }}>
                   Your build will appear here
                 </p>
               </div>
@@ -303,16 +303,16 @@ return 0
 
 export default function BattlePage() {
   return (
-    <Suspense fallback={<div style={{ background: '#0a0a0a', minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ background: '#f8fafc', minHeight: '100vh' }} />}>
       <BattleContent />
     </Suspense>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { height: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'hidden' },
+  container: { height: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'hidden' },
   topBar: {
-    height: '48px', background: '#0a0a0a', borderBottom: '1px solid #1a1a1a',
+    height: '48px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9',
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '0 1.5rem', flexShrink: 0,
   },
@@ -325,7 +325,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   main: { display: 'flex', flex: 1, overflow: 'hidden' },
   chatPanel: {
-    width: '50%', borderRight: '1px solid #1a1a1a',
+    width: '50%', borderRight: '1px solid #f1f5f9',
     display: 'flex', flexDirection: 'column', overflow: 'hidden',
   },
   chatMessages: {
@@ -336,15 +336,15 @@ const styles: Record<string, React.CSSProperties> = {
   message: { maxWidth: '85%', borderRadius: '10px', padding: '10px 14px' },
   chatStats: {
     display: 'flex', gap: '1rem', padding: '6px 1rem',
-    borderTop: '1px solid #1a1a1a', background: '#0a0a0a',
+    borderTop: '1px solid #f1f5f9', background: '#f8fafc',
   },
   inputWrap: {
-    padding: '1rem', borderTop: '1px solid #1a1a1a',
+    padding: '1rem', borderTop: '1px solid #f1f5f9',
     display: 'flex', gap: '8px', alignItems: 'flex-end',
   },
   input: {
-    flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a',
-    borderRadius: '8px', padding: '10px 14px', color: '#fff',
+    flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0',
+    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',
     fontSize: '13px', outline: 'none', resize: 'none', fontFamily: 'sans-serif',
   },
   sendBtn: {
@@ -355,7 +355,7 @@ const styles: Record<string, React.CSSProperties> = {
   rightPanel: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   toggleBar: {
     display: 'flex', gap: '4px', padding: '8px',
-    borderBottom: '1px solid #1a1a1a', background: '#0a0a0a',
+    borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
   },
   toggleBtn: {
     padding: '4px 16px', borderRadius: '6px', border: 'none',
@@ -365,8 +365,8 @@ const styles: Record<string, React.CSSProperties> = {
   emptyPreview: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   iframe: { width: '100%', height: '100%', border: 'none', background: '#fff' },
   codeView: {
-    margin: 0, padding: '1rem', color: '#aaa', fontSize: '12px',
+    margin: 0, padding: '1rem', color: '#64748b', fontSize: '12px',
     fontFamily: 'monospace', overflowY: 'auto', height: '100%',
-    background: '#0a0a0a', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+    background: '#f8fafc', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
   },
 }

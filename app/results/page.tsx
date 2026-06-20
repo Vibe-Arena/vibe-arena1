@@ -59,10 +59,10 @@ function ResultsContent() {
             <div key={i} style={{ ...styles.judgeIcon, animationDelay: `${i * 0.3}s` }}>{icon}</div>
           ))}
         </div>
-        <h2 style={{ color: '#fff', fontSize: '22px', fontWeight: '700', margin: '0 0 8px' }}>
+        <h2 style={{ color: '#0f172a', fontSize: '22px', fontWeight: '700', margin: '0 0 8px' }}>
           Judges are reviewing your builds...
         </h2>
-        <p style={{ color: '#555', fontSize: '14px', margin: '0 0 2rem' }}>
+        <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 2rem' }}>
           3 AI judges are scoring your submission
         </p>
         <div style={styles.progressBar}>
@@ -100,16 +100,16 @@ function ResultsContent() {
           <h1 style={{ color: iWon ? '#00bfff' : '#ff4d4d', fontSize: '36px', fontWeight: '800', margin: '0 0 8px' }}>
             {iWon ? 'You Won!' : 'You Lost'}
           </h1>
-          <p style={{ color: '#555', fontSize: '14px', margin: '0 0 1rem' }}>{result?.reasoning}</p>
+          <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 1rem' }}>{result?.reasoning}</p>
           <div style={styles.scoreRow}>
             <div style={styles.scoreItem}>
-              <span style={{ color: '#555', fontSize: '12px' }}>Your Score</span>
-              <span style={{ color: '#fff', fontSize: '24px', fontWeight: '700' }}>{result?.player1?.total}/100</span>
+              <span style={{ color: '#94a3b8', fontSize: '12px' }}>Your Score</span>
+              <span style={{ color: '#0f172a', fontSize: '24px', fontWeight: '700' }}>{result?.player1?.total}/100</span>
             </div>
-            <div style={{ color: '#333', fontSize: '20px', fontWeight: '800' }}>VS</div>
+            <div style={{ color: '#cbd5e1', fontSize: '20px', fontWeight: '800' }}>VS</div>
             <div style={styles.scoreItem}>
-              <span style={{ color: '#555', fontSize: '12px' }}>Opponent Score</span>
-              <span style={{ color: '#fff', fontSize: '24px', fontWeight: '700' }}>{result?.player2?.total}/100</span>
+              <span style={{ color: '#94a3b8', fontSize: '12px' }}>Opponent Score</span>
+              <span style={{ color: '#0f172a', fontSize: '24px', fontWeight: '700' }}>{result?.player2?.total}/100</span>
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ function ResultsContent() {
           </div>
         ) : (
           <div style={styles.promptsView}>
-            <p style={{ color: '#555', fontSize: '14px' }}>Prompt history coming in multiplayer mode.</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px' }}>Prompt history coming in multiplayer mode.</p>
           </div>
         )}
 
@@ -216,14 +216,14 @@ function ResultsContent() {
 
 export default function ResultsPage() {
   return (
-    <Suspense fallback={<div style={{ background: '#0a0a0a', minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ background: '#f8fafc', minHeight: '100vh' }} />}>
       <ResultsContent />
     </Suspense>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: '#0a0a0a', fontFamily: 'sans-serif' },
+  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
   judgingScreen: {
     minHeight: '100vh', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', padding: '2rem',
@@ -233,7 +233,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '48px', animation: 'bounce 1s infinite',
   },
   progressBar: {
-    width: '300px', height: '4px', background: '#1a1a1a',
+    width: '300px', height: '4px', background: '#f1f5f9',
     borderRadius: '2px', overflow: 'hidden',
   },
   progressFill: {
@@ -242,8 +242,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   navbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 2rem', height: '60px', borderBottom: '1px solid #1a1a1a',
-    background: '#0a0a0a', position: 'sticky', top: 0, zIndex: 100,
+    padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9',
+    background: '#f8fafc', position: 'sticky', top: 0, zIndex: 100,
   },
   logo: { color: '#00bfff', fontWeight: '800', fontSize: '18px', cursor: 'pointer' },
   main: { padding: '2rem', maxWidth: '900px', width: '100%', margin: '0 auto' },
@@ -253,28 +253,28 @@ const styles: Record<string, React.CSSProperties> = {
   scoreRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3rem' },
   scoreItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
   breakdown: {
-    background: '#111', border: '1px solid #1a1a1a',
+    background: '#ffffff', border: '1px solid #f1f5f9',
     borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem',
   },
   sectionTitle: {
     color: '#444', fontSize: '12px', fontWeight: '500',
     textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 1rem',
   },
-  th: { color: '#444', fontSize: '12px', textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #1a1a1a' },
-  td: { color: '#aaa', fontSize: '13px', padding: '10px 12px', borderBottom: '1px solid #0a0a0a' },
+  th: { color: '#444', fontSize: '12px', textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #f1f5f9' },
+  td: { color: '#64748b', fontSize: '13px', padding: '10px 12px', borderBottom: '1px solid #f8fafc' },
   tabs: { display: 'flex', gap: '4px', marginBottom: '1rem' },
   tab: {
     padding: '8px 20px', borderRadius: '8px', border: 'none',
     fontSize: '13px', fontWeight: '600', cursor: 'pointer',
   },
   buildView: {
-    background: '#111', border: '1px solid #1a1a1a',
+    background: '#ffffff', border: '1px solid #f1f5f9',
     borderRadius: '12px', overflow: 'hidden', height: '500px',
     display: 'flex', flexDirection: 'column',
   },
   toggleBar: {
     display: 'flex', gap: '4px', padding: '8px',
-    borderBottom: '1px solid #1a1a1a', background: '#0a0a0a',
+    borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
   },
   toggleBtn: {
     padding: '4px 16px', borderRadius: '6px', border: 'none',
@@ -282,14 +282,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   iframe: { flex: 1, border: 'none', background: '#fff' },
   codeView: {
-    flex: 1, margin: 0, padding: '1rem', color: '#aaa', fontSize: '12px',
-    fontFamily: 'monospace', overflowY: 'auto', background: '#0a0a0a',
+    flex: 1, margin: 0, padding: '1rem', color: '#64748b', fontSize: '12px',
+    fontFamily: 'monospace', overflowY: 'auto', background: '#f8fafc',
     whiteSpace: 'pre-wrap', wordBreak: 'break-all',
   },
-  promptsView: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '2rem' },
+  promptsView: { background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '12px', padding: '2rem' },
   backBtn: {
-    background: 'transparent', border: '1px solid #2a2a2a',
-    color: '#aaa', borderRadius: '8px', padding: '8px 16px',
+    background: 'transparent', border: '1px solid #e2e8f0',
+    color: '#64748b', borderRadius: '8px', padding: '8px 16px',
     fontSize: '13px', cursor: 'pointer',
   },
   rematchBtn: {

@@ -36,15 +36,15 @@ function PreBattleContent() {
         {/* COUNTDOWN */}
         <div style={styles.countdownWrap}>
           <div style={styles.countdown}>{countdown}</div>
-          <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Battle starts in</p>
+          <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Battle starts in</p>
         </div>
 
         {/* PROMPT */}
         <div style={styles.promptBox}>
-          <p style={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>
             Your Prompt
           </p>
-          <p style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: 0, lineHeight: 1.4 }}>
+          <p style={{ color: '#0f172a', fontSize: '20px', fontWeight: '700', margin: 0, lineHeight: 1.4 }}>
             {prompt}
           </p>
         </div>
@@ -52,13 +52,13 @@ function PreBattleContent() {
         {/* MODEL */}
         <div style={styles.modelRow}>
           <div style={styles.modelCard}>
-            <p style={{ color: '#555', fontSize: '11px', margin: '0 0 4px' }}>YOUR MODEL</p>
+            <p style={{ color: '#94a3b8', fontSize: '11px', margin: '0 0 4px' }}>YOUR MODEL</p>
             <p style={{ color: '#00bfff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{modelName}</p>
           </div>
           <div style={styles.vs}>VS</div>
           <div style={styles.modelCard}>
-            <p style={{ color: '#555', fontSize: '11px', margin: '0 0 4px' }}>OPPONENT</p>
-            <p style={{ color: '#aaa', fontSize: '14px', fontWeight: '600', margin: 0 }}>Waiting...</p>
+            <p style={{ color: '#94a3b8', fontSize: '11px', margin: '0 0 4px' }}>OPPONENT</p>
+            <p style={{ color: '#64748b', fontSize: '14px', fontWeight: '600', margin: 0 }}>Waiting...</p>
           </div>
         </div>
 
@@ -70,7 +70,7 @@ function PreBattleContent() {
           {RULES.map((rule, i) => (
             <div key={i} style={styles.ruleRow}>
               <span style={{ color: '#00bfff', fontSize: '13px', flexShrink: 0 }}>✓</span>
-              <span style={{ color: '#666', fontSize: '13px' }}>{rule}</span>
+              <span style={{ color: '#64748b', fontSize: '13px' }}>{rule}</span>
             </div>
           ))}
         </div>
@@ -82,7 +82,7 @@ function PreBattleContent() {
 
 export default function PreBattlePage() {
   return (
-    <Suspense fallback={<div style={{ background: '#0a0a0a', minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ background: '#f8fafc', minHeight: '100vh' }} />}>
       <PreBattleContent />
     </Suspense>
   )
@@ -91,7 +91,7 @@ export default function PreBattlePage() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: '100vh',
-    background: '#0a0a0a',
+    background: '#f8fafc',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -99,8 +99,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '2rem',
   },
   card: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
+    background: '#ffffff',
+    border: '1px solid #f1f5f9',
     borderRadius: '20px',
     padding: '3rem',
     width: '100%',
@@ -118,8 +118,8 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '8px',
   },
   promptBox: {
-    background: '#0a0a0a',
-    border: '1px solid #1a1a1a',
+    background: '#f8fafc',
+    border: '1px solid #f1f5f9',
     borderRadius: '12px',
     padding: '1.5rem',
     marginBottom: '1.5rem',
@@ -132,21 +132,21 @@ const styles: Record<string, React.CSSProperties> = {
   },
   modelCard: {
     flex: 1,
-    background: '#0a0a0a',
-    border: '1px solid #1a1a1a',
+    background: '#f8fafc',
+    border: '1px solid #f1f5f9',
     borderRadius: '10px',
     padding: '1rem',
     textAlign: 'center',
   },
   vs: {
-    color: '#333',
+    color: '#cbd5e1',
     fontSize: '16px',
     fontWeight: '800',
     flexShrink: 0,
   },
   rulesBox: {
-    background: '#0a0a0a',
-    border: '1px solid #1a1a1a',
+    background: '#f8fafc',
+    border: '1px solid #f1f5f9',
     borderRadius: '12px',
     padding: '1.5rem',
   },

@@ -62,7 +62,7 @@ export default function SettingsPage() {
     router.push('/login')
   }
 
-  if (loading) return <div style={styles.container}><p style={{ color: '#555' }}>Loading...</p></div>
+  if (loading) return <div style={styles.container}><p style={{ color: '#94a3b8' }}>Loading...</p></div>
 
   return (
     <div style={styles.container}>
@@ -75,12 +75,12 @@ export default function SettingsPage() {
           <a href="/leaderboard" style={styles.navLink}>Leaderboard</a>
         </div>
         <div style={styles.userBtn} onClick={() => router.push('/profile')}>
-          <span style={{ color: '#aaa', fontSize: '13px' }}>{user?.username}</span>
+          <span style={{ color: '#64748b', fontSize: '13px' }}>{user?.username}</span>
         </div>
       </nav>
 
       <main style={styles.main}>
-        <h1 style={{ color: '#fff', fontSize: '24px', fontWeight: '700', marginBottom: '2rem' }}>Settings</h1>
+        <h1 style={{ color: '#0f172a', fontSize: '24px', fontWeight: '700', marginBottom: '2rem' }}>Settings</h1>
 
         {/* USERNAME */}
         <div style={styles.section}>
@@ -111,17 +111,17 @@ export default function SettingsPage() {
         {/* EMAIL */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Email</h3>
-          <p style={{ color: '#555', fontSize: '13px', margin: '0 0 8px' }}>{user?.email}</p>
-          <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>To change your email contact support.</p>
+          <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px' }}>{user?.email}</p>
+          <p style={{ color: '#cbd5e1', fontSize: '12px', margin: 0 }}>To change your email contact support.</p>
         </div>
 
         {/* WALLET */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Phantom Wallet</h3>
-          <p style={{ color: '#555', fontSize: '13px', margin: '0 0 8px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 8px' }}>
             {user?.phantom_wallet || 'No wallet connected yet.'}
           </p>
-          <p style={{ color: '#333', fontSize: '12px', margin: 0 }}>Wallet is connected during queue entry.</p>
+          <p style={{ color: '#cbd5e1', fontSize: '12px', margin: 0 }}>Wallet is connected during queue entry.</p>
         </div>
 
         {/* NOTIFICATIONS */}
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                 left: notifications ? '23px' : '3px',
               }} />
             </div>
-            <span style={{ color: '#aaa', fontSize: '13px' }}>
+            <span style={{ color: '#64748b', fontSize: '13px' }}>
               {notifications ? 'Battle window reminders on' : 'Notifications off'}
             </span>
           </div>
@@ -159,22 +159,22 @@ export default function SettingsPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: '#0a0a0a', fontFamily: 'sans-serif' },
+  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
   navbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 2rem', height: '60px', borderBottom: '1px solid #1a1a1a',
-    background: '#0a0a0a', position: 'sticky', top: 0, zIndex: 100,
+    padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9',
+    background: '#f8fafc', position: 'sticky', top: 0, zIndex: 100,
   },
   logo: { color: '#00bfff', fontWeight: '800', fontSize: '18px', cursor: 'pointer' },
   navLinks: { display: 'flex', gap: '2rem' },
-  navLink: { color: '#666', textDecoration: 'none', fontSize: '14px' },
+  navLink: { color: '#64748b', textDecoration: 'none', fontSize: '14px' },
   userBtn: {
     display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-    padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#111',
+    padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#ffffff',
   },
   main: { padding: '2rem', maxWidth: '600px', width: '100%', margin: '0 auto' },
   section: {
-    background: '#111', border: '1px solid #1a1a1a',
+    background: '#ffffff', border: '1px solid #f1f5f9',
     borderRadius: '12px', padding: '1.5rem', marginBottom: '1rem',
   },
   sectionTitle: {
@@ -182,8 +182,8 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px',
   },
   input: {
-    flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a',
-    borderRadius: '8px', padding: '10px 14px', color: '#fff',
+    flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0',
+    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',
     fontSize: '14px', outline: 'none',
   },
   saveBtn: {
@@ -191,7 +191,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
   },
   signOutBtn: {
-    background: 'transparent', border: '1px solid #2a2a2a',
+    background: 'transparent', border: '1px solid #e2e8f0',
     color: '#ff4d4d', borderRadius: '8px', padding: '10px 20px',
     fontSize: '14px', cursor: 'pointer',
   },

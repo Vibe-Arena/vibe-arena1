@@ -66,8 +66,8 @@ export default function LeaderboardPage() {
   }
 
   if (loading) return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <p style={{ color: '#555' }}>Loading...</p>
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <p style={{ color: '#94a3b8' }}>Loading...</p>
     </div>
   )
 
@@ -80,16 +80,16 @@ export default function LeaderboardPage() {
           <a href="/leaderboard" style={{ ...styles.navLink, color: '#00bfff' }}>Leaderboard</a>
         </div>
         <div style={styles.userBtn} onClick={() => router.push('/profile')}>
-          <span style={{ color: '#aaa', fontSize: '13px' }}>{user?.username}</span>
+          <span style={{ color: '#64748b', fontSize: '13px' }}>{user?.username}</span>
         </div>
       </nav>
 
       <main style={styles.main}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <h1 style={{ color: '#fff', fontSize: '32px', fontWeight: '800', margin: '0 0 8px' }}>
+          <h1 style={{ color: '#0f172a', fontSize: '32px', fontWeight: '800', margin: '0 0 8px' }}>
             Leaderboard
           </h1>
-          <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>Season 1 Rankings</p>
+          <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Season 1 Rankings</p>
         </div>
 
         {/* TABS */}
@@ -104,9 +104,9 @@ export default function LeaderboardPage() {
               onClick={() => setTab(t.id)}
               style={{
                 ...styles.tab,
-                background: tab === t.id ? '#00bfff' : '#111',
+                background: tab === t.id ? '#00bfff' : '#ffffff',
                 color: tab === t.id ? '#000' : '#555',
-                border: tab === t.id ? 'none' : '1px solid #1a1a1a',
+                border: tab === t.id ? 'none' : '1px solid #f1f5f9',
               }}
             >
               {t.label}
@@ -130,7 +130,7 @@ export default function LeaderboardPage() {
           {/* ROWS */}
           {sorted.length === 0 ? (
             <div style={styles.emptyState}>
-              <p style={{ color: '#333', fontSize: '14px', margin: 0 }}>
+              <p style={{ color: '#cbd5e1', fontSize: '14px', margin: 0 }}>
                 No battles yet. Be the first to compete.
               </p>
             </div>
@@ -139,7 +139,7 @@ export default function LeaderboardPage() {
               key={entry.username}
               style={{
                 ...styles.row,
-                background: entry.username === user?.username ? '#001a0f' : i % 2 === 0 ? '#0a0a0a' : '#0a0a0a',
+                background: entry.username === user?.username ? '#001a0f' : i % 2 === 0 ? '#f8fafc' : '#f8fafc',
                 border: entry.username === user?.username ? '1px solid #00bfff20' : '1px solid transparent',
               }}
             >
@@ -149,7 +149,7 @@ export default function LeaderboardPage() {
               <span style={{ flex: 1, color: entry.username === user?.username ? '#00bfff' : '#fff', fontSize: '14px', fontWeight: '500' }}>
                 {entry.username}
                 {entry.username === user?.username && (
-                  <span style={{ color: '#333', fontSize: '11px', marginLeft: '8px' }}>you</span>
+                  <span style={{ color: '#cbd5e1', fontSize: '11px', marginLeft: '8px' }}>you</span>
                 )}
               </span>
               <span style={styles.col}>{entry.wins}</span>
@@ -165,18 +165,18 @@ export default function LeaderboardPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: '#0a0a0a', fontFamily: 'sans-serif' },
+  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
   navbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 2rem', height: '60px', borderBottom: '1px solid #1a1a1a',
-    background: '#0a0a0a', position: 'sticky', top: 0, zIndex: 100,
+    padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9',
+    background: '#f8fafc', position: 'sticky', top: 0, zIndex: 100,
   },
   logo: { color: '#00bfff', fontWeight: '800', fontSize: '18px', cursor: 'pointer' },
   navLinks: { display: 'flex', gap: '2rem' },
-  navLink: { color: '#666', textDecoration: 'none', fontSize: '14px' },
+  navLink: { color: '#64748b', textDecoration: 'none', fontSize: '14px' },
   userBtn: {
     display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-    padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#111',
+    padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#ffffff',
   },
   main: { padding: '2rem', maxWidth: '900px', width: '100%', margin: '0 auto' },
   tabs: { display: 'flex', gap: '8px', marginBottom: '1.5rem' },
@@ -185,12 +185,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px', fontWeight: '600', cursor: 'pointer',
   },
   table: {
-    background: '#111', border: '1px solid #1a1a1a',
+    background: '#ffffff', border: '1px solid #f1f5f9',
     borderRadius: '12px', overflow: 'hidden',
   },
   tableHeader: {
     display: 'flex', alignItems: 'center', padding: '12px 16px',
-    borderBottom: '1px solid #1a1a1a', background: '#0a0a0a',
+    borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
     color: '#444', fontSize: '11px', fontWeight: '500',
     textTransform: 'uppercase', letterSpacing: '0.08em',
   },
@@ -199,7 +199,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '14px 16px', borderRadius: '4px',
   },
   col: {
-    width: '100px', color: '#555', fontSize: '13px', textAlign: 'right' as const,
+    width: '100px', color: '#94a3b8', fontSize: '13px', textAlign: 'right' as const,
   },
   emptyState: {
     padding: '4rem', textAlign: 'center',

@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className} style={{ background: '#0a0a0a', margin: 0 }}>
+      <body className={inter.className} style={{ background: '#f8fafc', margin: 0 }}>
         <MobileBlock>
           {children}
         </MobileBlock>

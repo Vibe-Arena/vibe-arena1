@@ -86,8 +86,8 @@ export default function AdminPage() {
   )
 
   if (loading) return (
-    <div style={{ background: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <p style={{ color: '#555' }}>Loading...</p>
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <p style={{ color: '#94a3b8' }}>Loading...</p>
     </div>
   )
 
@@ -97,7 +97,7 @@ export default function AdminPage() {
     <div style={styles.container}>
       <nav style={styles.navbar}>
         <span style={{ color: '#ff4d4d', fontWeight: '800', fontSize: '18px' }}>⚡ Admin</span>
-        <span style={{ color: '#333', fontSize: '13px' }}>Vibe Arena Control Panel</span>
+        <span style={{ color: '#cbd5e1', fontSize: '13px' }}>Vibe Arena Control Panel</span>
         <button onClick={() => router.push('/dashboard')} style={styles.backBtn}>← Back to App</button>
       </nav>
 
@@ -116,7 +116,7 @@ export default function AdminPage() {
               onClick={() => setTab(t.id)}
               style={{
                 ...styles.sideItem,
-                background: tab === t.id ? '#1a1a1a' : 'transparent',
+                background: tab === t.id ? '#f1f5f9' : 'transparent',
                 color: tab === t.id ? '#fff' : '#555',
               }}
             >
@@ -167,9 +167,9 @@ export default function AdminPage() {
                 </div>
                 {filteredUsers.map(u => (
                   <div key={u.id} style={styles.tableRow}>
-                    <span style={{ flex: 1, color: '#fff', fontSize: '13px' }}>{u.username}</span>
-                    <span style={{ flex: 1, color: '#555', fontSize: '13px' }}>{u.email}</span>
-                    <span style={{ width: '100px', color: '#333', fontSize: '12px' }}>
+                    <span style={{ flex: 1, color: '#0f172a', fontSize: '13px' }}>{u.username}</span>
+                    <span style={{ flex: 1, color: '#94a3b8', fontSize: '13px' }}>{u.email}</span>
+                    <span style={{ width: '100px', color: '#cbd5e1', fontSize: '12px' }}>
                       {new Date(u.created_at).toLocaleDateString()}
                     </span>
                     <span style={{ width: '120px' }}>
@@ -211,16 +211,16 @@ export default function AdminPage() {
                         {m.status}
                       </span>
                     </span>
-                    <span style={{ flex: 1, color: '#555', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ flex: 1, color: '#94a3b8', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {m.prompt || '—'}
                     </span>
-                    <span style={{ width: '100px', color: '#333', fontSize: '12px' }}>
+                    <span style={{ width: '100px', color: '#cbd5e1', fontSize: '12px' }}>
                       {new Date(m.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 ))}
                 {matches.length === 0 && (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: '#333', fontSize: '13px' }}>
+                  <div style={{ padding: '3rem', textAlign: 'center', color: '#cbd5e1', fontSize: '13px' }}>
                     No matches yet.
                   </div>
                 )}
@@ -242,8 +242,8 @@ export default function AdminPage() {
                 {flags.map(f => (
                   <div key={f.id} style={styles.tableRow}>
                     <span style={{ width: '120px', color: '#ff4d4d', fontSize: '12px', fontWeight: '600' }}>{f.type}</span>
-                    <span style={{ flex: 1, color: '#555', fontSize: '13px' }}>{f.description || '—'}</span>
-                    <span style={{ width: '100px', color: '#333', fontSize: '12px' }}>
+                    <span style={{ flex: 1, color: '#94a3b8', fontSize: '13px' }}>{f.description || '—'}</span>
+                    <span style={{ width: '100px', color: '#cbd5e1', fontSize: '12px' }}>
                       {new Date(f.created_at).toLocaleDateString()}
                     </span>
                     <span style={{ width: '100px' }}>
@@ -254,7 +254,7 @@ export default function AdminPage() {
                   </div>
                 ))}
                 {flags.length === 0 && (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: '#333', fontSize: '13px' }}>
+                  <div style={{ padding: '3rem', textAlign: 'center', color: '#cbd5e1', fontSize: '13px' }}>
                     No unresolved flags. All clear.
                   </div>
                 )}
@@ -269,46 +269,46 @@ export default function AdminPage() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: '#0a0a0a', fontFamily: 'sans-serif' },
+  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
   navbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 2rem', height: '60px', borderBottom: '1px solid #1a1a1a',
-    background: '#0a0a0a',
+    padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9',
+    background: '#f8fafc',
   },
   backBtn: {
-    background: 'transparent', border: '1px solid #2a2a2a',
-    color: '#555', borderRadius: '8px', padding: '6px 14px',
+    background: 'transparent', border: '1px solid #e2e8f0',
+    color: '#94a3b8', borderRadius: '8px', padding: '6px 14px',
     fontSize: '13px', cursor: 'pointer',
   },
   layout: { display: 'flex', minHeight: 'calc(100vh - 60px)' },
-  sidebar: { width: '200px', borderRight: '1px solid #1a1a1a', padding: '1rem 0', flexShrink: 0 },
+  sidebar: { width: '200px', borderRight: '1px solid #f1f5f9', padding: '1rem 0', flexShrink: 0 },
   sideItem: {
     padding: '10px 1.5rem', fontSize: '13px', cursor: 'pointer',
     borderRadius: '6px', margin: '2px 8px', transition: 'all 0.15s',
   },
   content: { flex: 1, padding: '2rem', overflowY: 'auto' as const },
-  pageTitle: { color: '#fff', fontSize: '22px', fontWeight: '700', margin: '0 0 1.5rem' },
+  pageTitle: { color: '#0f172a', fontSize: '22px', fontWeight: '700', margin: '0 0 1.5rem' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' },
   statCard: {
-    background: '#111', border: '1px solid #1a1a1a',
+    background: '#ffffff', border: '1px solid #f1f5f9',
     borderRadius: '12px', padding: '1.5rem', textAlign: 'center',
   },
   search: {
-    width: '100%', background: '#111', border: '1px solid #2a2a2a',
-    borderRadius: '8px', padding: '10px 14px', color: '#fff',
+    width: '100%', background: '#ffffff', border: '1px solid #e2e8f0',
+    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',
     fontSize: '13px', outline: 'none', marginBottom: '1rem',
     boxSizing: 'border-box' as const,
   },
-  tableWrap: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '12px', overflow: 'hidden' },
+  tableWrap: { background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '12px', overflow: 'hidden' },
   tableHead: {
     display: 'flex', alignItems: 'center', padding: '10px 16px',
-    borderBottom: '1px solid #1a1a1a', background: '#0a0a0a',
+    borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
     color: '#444', fontSize: '11px', fontWeight: '500', textTransform: 'uppercase' as const,
     letterSpacing: '0.08em',
   },
   tableRow: {
     display: 'flex', alignItems: 'center', padding: '12px 16px',
-    borderBottom: '1px solid #0a0a0a',
+    borderBottom: '1px solid #f8fafc',
   },
   actionBtn: {
     background: 'transparent', border: '1px solid',

@@ -1,312 +1,219 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-type User = {
-  id: string
-  username: string
-  email: string
-  sol_balance: number
-}
-
-type Window = {
-  name: string
-  start: string
-  end: string
-  timezone: string
-}
-
-const WINDOWS: Window[] = [
-  { name: 'EU', start: '18:00', end: '20:00', timezone: 'CET' },
-  { name: 'USA', start: '19:00', end: '21:00', timezone: 'EST' },
-  { name: 'ASIA', start: '20:00', end: '22:00', timezone: 'JST' },
+const MODELS = [
+  { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1', provider: 'Meta', color: '#7B61FF' },
+  { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B', provider: 'Mistral', color: '#FF6B35' },
+  { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2', provider: 'Google', color: '#4285F4' },
+  { id: 'qwen/qwen-2-7b-instruct:free', name: 'Qwen 2', provider: 'Alibaba', color: '#FF6900' },
 ]
 
-export default function Dashboard() {
+type Stage = 'select' | 'waiting' | 'matched'
+
+export default function QueuePage() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [selectedModel, setSelectedModel] = useState('')
   const [loading, setLoading] = useState(true)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [stage, setStage] = useState<Stage>('select')
+  const [queueCount, setQueueCount] = useState(0)
+  const [waitTime, setWaitTime] = useState(0)
+  const waitInterval = useRef<any>(null)
+  const matchSub = useRef<any>(null)
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (!authUser) { router.push('/login'); return }
-
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single()
-
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
+      if (!data) {
+        const { data: newUser } = await supabase.from('users').insert({
+          id: authUser.id,
+          email: authUser.email,
+          username: authUser.email?.split('@')[0] || 'player',
+        }).select().single()
+        setUser(newUser)
+        setLoading(false)
+        return
+      }
       setUser(data)
       setLoading(false)
     }
     getUser()
   }, [router])
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+  useEffect(() => {
+    const channel = supabase
+      .channel('queue-count')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue' }, async () => {
+        const { count } = await supabase.from('queue').select('*', { count: 'exact', head: true })
+        setQueueCount(count || 0)
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  const watchForMatch = (userId: string) => {
+    const pollInterval = setInterval(async () => {
+      const { data: match } = await supabase
+        .from('matches')
+        .select('*')
+        .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      if (match) {
+        clearInterval(pollInterval)
+        handleMatched(match)
+      }
+    }, 2000)
+    matchSub.current = { unsubscribe: () => clearInterval(pollInterval) }
   }
 
-  if (loading) {
-    return (
-      <div style={{ ...styles.container, justifyContent: 'center', alignItems: 'center' }}>
-        <p style={{ color: '#555' }}>Loading...</p>
-      </div>
-    )
+  const handleMatched = (match: any) => {
+    setStage('matched')
+    clearInterval(waitInterval.current)
+    setTimeout(() => {
+      router.push(`/battle/pre?prompt=${encodeURIComponent(match.prompt)}&model=${encodeURIComponent(selectedModel)}&matchId=${match.id}`)
+    }, 2000)
   }
+
+  const enterQueue = async () => {
+    if (!selectedModel) return
+    let currentUser = user
+    if (!currentUser) {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) { router.push('/login'); return }
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
+      if (!data) { router.push('/login'); return }
+      currentUser = data
+      setUser(data)
+    }
+    setStage('waiting')
+    waitInterval.current = setInterval(() => setWaitTime(t => t + 1), 1000)
+    watchForMatch(currentUser.id)
+    const res = await fetch('/api/match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, model: selectedModel }),
+    })
+    const data = await res.json()
+    if (data.status === 'matched') {
+      handleMatched(data.match)
+    }
+  }
+
+  const leaveQueue = async () => {
+    if (!user) return
+    clearInterval(waitInterval.current)
+    if (matchSub.current) matchSub.current.unsubscribe()
+    await fetch('/api/match', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id }),
+    })
+    setStage('select')
+    setWaitTime(0)
+  }
+
+  const formatWait = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return m > 0 ? `${m}m ${s}s` : `${s}s`
+  }
+
+  if (loading) return (
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <p style={{ color: '#94a3b8' }}>Loading...</p>
+    </div>
+  )
 
   return (
     <div style={styles.container}>
-
-      {/* NAVBAR */}
       <nav style={styles.navbar}>
-        <span style={styles.logo}>Vibe Arena</span>
+        <span style={styles.logo} onClick={() => router.push('/dashboard')}>Vibe Arena</span>
         <div style={styles.navLinks}>
           <a href="/dashboard" style={styles.navLink}>Dashboard</a>
           <a href="/leaderboard" style={styles.navLink}>Leaderboard</a>
         </div>
-        <div style={{ position: 'relative' }}>
-          <div style={styles.userBtn} onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <span style={{ color: '#00bfff', fontSize: '13px' }}>◎ {user?.sol_balance?.toFixed(3)} SOL</span>
-            <span style={{ color: '#aaa', fontSize: '13px' }}>{user?.username}</span>
-            <span style={{ color: '#555', fontSize: '11px' }}>▼</span>
-          </div>
-          {dropdownOpen && (
-            <div style={styles.dropdown}>
-              <div style={styles.dropItem} onClick={() => router.push('/profile')}>Profile</div>
-              <div style={styles.dropItem} onClick={() => router.push('/settings')}>Settings</div>
-              <div style={{ ...styles.dropItem, color: '#ff4d4d' }} onClick={handleSignOut}>Sign Out</div>
-            </div>
-          )}
+        <div style={styles.userBtn}>
+          <span style={{ color: '#64748b', fontSize: '13px' }}>{user?.username}</span>
         </div>
       </nav>
 
-      {/* MAIN */}
       <main style={styles.main}>
-
-        {/* HERO — window status */}
-        <div style={styles.hero}>
-          <p style={{ color: '#555', fontSize: '13px', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Next Battle Window
-          </p>
-          <h2 style={{ color: '#00bfff', fontSize: '48px', fontWeight: '800', margin: '0 0 0.5rem' }}>
-            EU Window
-          </h2>
-          <p style={{ color: '#666', fontSize: '15px', margin: 0 }}>
-            Opens at 18:00 CET · 1v1 · $12.50 entry · Winner takes $20
-          </p>
-          <button style={styles.queueBtn} onClick={() => router.push('/queue')}>
-            Enter Queue →
-          </button>
-        </div>
-
-        {/* STATS ROW */}
-        <div style={styles.statsRow}>
-          {[
-            { label: 'Matches Played', value: '0' },
-            { label: 'Wins', value: '0' },
-            { label: 'Win Rate', value: '0%' },
-            { label: 'Total Earned', value: '0 SOL' },
-          ].map(s => (
-            <div key={s.label} style={styles.statCard}>
-              <div style={{ color: '#fff', fontSize: '24px', fontWeight: '700' }}>{s.value}</div>
-              <div style={{ color: '#555', fontSize: '12px', marginTop: '4px' }}>{s.label}</div>
+        {stage === 'select' && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+              <h1 style={{ color: '#0f172a', fontSize: '32px', fontWeight: '800', margin: '0 0 8px' }}>Choose Your AI</h1>
+              <p style={{ color: '#94a3b8', fontSize: '15px', margin: '0 0 8px' }}>Pick the model you'll use to build. Choose wisely.</p>
+              {queueCount > 0 && (
+                <p style={{ color: '#00bfff', fontSize: '13px', margin: 0 }}>{queueCount} player{queueCount !== 1 ? 's' : ''} in queue</p>
+              )}
             </div>
-          ))}
-        </div>
-
-        {/* BOTTOM ROW */}
-        <div style={styles.bottomRow}>
-
-          {/* WALLET CARD */}
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>Your Wallet</h3>
-            <div style={{ color: '#00bfff', fontSize: '32px', fontWeight: '700', margin: '1rem 0 0.25rem' }}>
-              {user?.sol_balance?.toFixed(4)} SOL
-            </div>
-            <div style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>≈ $0.00 USD</div>
-            <button style={styles.withdrawBtn}>Withdraw</button>
-          </div>
-
-          {/* WINDOWS SCHEDULE */}
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>Battle Windows</h3>
-            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {WINDOWS.map(w => (
-                <div key={w.name} style={styles.windowRow}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={styles.windowBadge}>{w.name}</span>
-                    <span style={{ color: '#aaa', fontSize: '13px' }}>{w.start} – {w.end} {w.timezone}</span>
+            <div style={styles.modelsGrid}>
+              {MODELS.map(m => (
+                <div key={m.id} onClick={() => setSelectedModel(m.id)} style={{ ...styles.modelCard, border: selectedModel === m.id ? `2px solid ${m.color}` : '2px solid #f1f5f9', cursor: 'pointer' }}>
+                  {selectedModel === m.id && <div style={{ ...styles.selectedBadge, background: m.color }}>SELECTED</div>}
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: m.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <span style={{ color: m.color, fontSize: '20px', fontWeight: '800' }}>{m.name.charAt(0)}</span>
                   </div>
-                  <span style={{ color: '#333', fontSize: '12px' }}>Closed</span>
+                  <h3 style={{ color: '#0f172a', fontSize: '18px', fontWeight: '700', margin: '0 0 4px' }}>{m.name}</h3>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{m.provider}</p>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* SEASON CARD */}
-          <div style={styles.card}>
-            <h3 style={styles.cardTitle}>Current Season</h3>
-            <div style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '1rem 0 0.25rem' }}>
-              Season 1
+            <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+              <button onClick={enterQueue} disabled={!selectedModel} style={{ ...styles.enterBtn, opacity: selectedModel ? 1 : 0.4, cursor: selectedModel ? 'pointer' : 'not-allowed' }}>
+                Find Opponent →
+              </button>
+              {!selectedModel && <p style={{ color: '#cbd5e1', fontSize: '13px', marginTop: '1rem' }}>Select a model to continue</p>}
             </div>
-            <div style={{ color: '#555', fontSize: '13px', marginBottom: '1rem' }}>Your rank: —</div>
-            <a href="/leaderboard" style={{ color: '#00bfff', fontSize: '13px', textDecoration: 'none' }}>
-              View Leaderboard →
-            </a>
-          </div>
+          </>
+        )}
 
-        </div>
+        {stage === 'waiting' && (
+          <div style={styles.waitingScreen}>
+            <div style={styles.spinner} />
+            <h2 style={{ color: '#0f172a', fontSize: '24px', fontWeight: '700', margin: '2rem 0 8px' }}>Finding an opponent...</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 8px' }}>Wait time: <span style={{ color: '#64748b' }}>{formatWait(waitTime)}</span></p>
+            <p style={{ color: '#cbd5e1', fontSize: '13px', margin: '0 0 2rem' }}>{queueCount} player{queueCount !== 1 ? 's' : ''} in queue</p>
+            <div style={styles.modelPill}>Your model: <span style={{ color: '#00bfff' }}>{MODELS.find(m => m.id === selectedModel)?.name}</span></div>
+            <button onClick={leaveQueue} style={styles.leaveBtn}>Leave Queue</button>
+          </div>
+        )}
+
+        {stage === 'matched' && (
+          <div style={styles.waitingScreen}>
+            <div style={{ fontSize: '64px', marginBottom: '1rem' }}>⚔️</div>
+            <h2 style={{ color: '#00bfff', fontSize: '28px', fontWeight: '800', margin: '0 0 8px' }}>Opponent Found!</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Starting battle in 2 seconds...</p>
+          </div>
+        )}
       </main>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    background: '#0a0a0a',
-    fontFamily: 'sans-serif',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  navbar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 2rem',
-    height: '60px',
-    borderBottom: '1px solid #1a1a1a',
-    background: '#0a0a0a',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-  },
-  logo: {
-    color: '#00bfff',
-    fontWeight: '800',
-    fontSize: '18px',
-  },
-  navLinks: {
-    display: 'flex',
-    gap: '2rem',
-  },
-  navLink: {
-    color: '#666',
-    textDecoration: 'none',
-    fontSize: '14px',
-  },
-  userBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    cursor: 'pointer',
-    padding: '6px 12px',
-    borderRadius: '8px',
-    border: '1px solid #222',
-    background: '#111',
-  },
-  dropdown: {
-    position: 'absolute',
-    right: 0,
-    top: '110%',
-    background: '#111',
-    border: '1px solid #222',
-    borderRadius: '8px',
-    minWidth: '150px',
-    zIndex: 200,
-    overflow: 'hidden',
-  },
-  dropItem: {
-    padding: '10px 16px',
-    color: '#aaa',
-    fontSize: '13px',
-    cursor: 'pointer',
-  },
-  main: {
-    padding: '2rem',
-    maxWidth: '1100px',
-    width: '100%',
-    margin: '0 auto',
-  },
-  hero: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
-    borderRadius: '16px',
-    padding: '2.5rem',
-    marginBottom: '1.5rem',
-  },
-  queueBtn: {
-    marginTop: '1.5rem',
-    background: '#00bfff',
-    color: '#000',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '12px 28px',
-    fontSize: '15px',
-    fontWeight: '700',
-    cursor: 'pointer',
-  },
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '12px',
-    marginBottom: '1.5rem',
-  },
-  statCard: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
-    borderRadius: '12px',
-    padding: '1.25rem',
-    textAlign: 'center',
-  },
-  bottomRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '12px',
-  },
-  card: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
-    borderRadius: '12px',
-    padding: '1.5rem',
-  },
-  cardTitle: {
-    color: '#444',
-    fontSize: '12px',
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    margin: 0,
-  },
-  windowRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '8px 0',
-    borderBottom: '1px solid #1a1a1a',
-  },
-  windowBadge: {
-    background: '#1a1a1a',
-    color: '#555',
-    fontSize: '11px',
-    fontWeight: '600',
-    padding: '2px 8px',
-    borderRadius: '4px',
-  },
-  withdrawBtn: {
-    background: 'transparent',
-    border: '1px solid #2a2a2a',
-    color: '#aaa',
-    borderRadius: '8px',
-    padding: '8px 16px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    width: '100%',
-  },
+  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
+  navbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc', position: 'sticky', top: 0, zIndex: 100 },
+  logo: { color: '#00bfff', fontWeight: '800', fontSize: '18px', cursor: 'pointer' },
+  navLinks: { display: 'flex', gap: '2rem' },
+  navLink: { color: '#64748b', textDecoration: 'none', fontSize: '14px' },
+  userBtn: { display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px solid #222', background: '#ffffff' },
+  main: { padding: '3rem 2rem', maxWidth: '800px', width: '100%', margin: '0 auto' },
+  modelsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' },
+  modelCard: { background: '#ffffff', borderRadius: '16px', padding: '1.5rem', position: 'relative', transition: 'border-color 0.15s' },
+  selectedBadge: { position: 'absolute', top: '12px', right: '12px', color: '#000', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px' },
+  enterBtn: { background: '#00bfff', color: '#000', border: 'none', borderRadius: '12px', padding: '16px 48px', fontSize: '17px', fontWeight: '800' },
+  waitingScreen: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' },
+  spinner: { width: '48px', height: '48px', border: '3px solid #f1f5f9', borderTop: '3px solid #00bfff', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+  modelPill: { background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '999px', padding: '8px 20px', color: '#94a3b8', fontSize: '13px', marginBottom: '1.5rem' },
+  leaveBtn: { background: 'transparent', border: '1px solid #e2e8f0', color: '#94a3b8', borderRadius: '8px', padding: '10px 24px', fontSize: '13px', cursor: 'pointer' },
 }

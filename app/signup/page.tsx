@@ -178,7 +178,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #cbd5e1',        // Changed border to a softer gray matching the vibe
     borderRadius: '8px', 
     padding: '10px 14px', 
-    color: '#1a1a1a',                   // Changed text color to dark gray so it's readable
+    color: '#0f172a',                   // Changed text color to dark gray so it's readable
     fontSize: '14px', 
     outline: 'none', 
     boxSizing: 'border-box' as const,

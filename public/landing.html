@@ -88,6 +88,10 @@
             color: white;
             border-color: #06b6d4;
         }
+        @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+        }
     </style>
 </head>
 <body class="selection:bg-cyan-100">
@@ -109,7 +113,7 @@
                 </svg>
             </div>
             <div class="hidden md:flex items-center gap-10 text-sm font-bold text-slate-500 uppercase tracking-wider">
-                <a href="#how-it-works" class="hover:text-cyan-500 transition-colors">How it works</a>
+                <a href="#BattleUnfolds" class="hover:text-cyan-500 transition-colors">How it works</a>
                 <a href="#arena" class="hover:text-cyan-500 transition-colors">The Tech</a>
                 <a href="/signup" class="aqua-btn text-white px-8 py-3 rounded-full shadow-lg transition-all text-xs tracking-[0.1em]">Sign Up</a>
             </div>
@@ -146,115 +150,205 @@
                     </div>
                 </div>
                 <!-- Mock Interface Content -->
-                <div class="flex flex-col md:flex-row h-auto md:h-[550px]">
-                    <!-- Sidebar: AI Selection -->
-                    <div class="w-full md:w-64 border-r border-gray-100 bg-gray-50/50 p-6">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Active Weapon</div>
-                        <div class="space-y-3" id="modelSelector">
-                            <div class="model-option bg-white p-4 rounded-xl border-2 border-cyan-500 shadow-sm flex items-center gap-3 cursor-pointer transition-all active:scale-95" data-model="claude">
-                                <div class="w-8 h-8 bg-cyan-50 rounded-lg flex items-center justify-center text-cyan-600">
-                                    <i data-lucide="zap" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-xs font-bold">Claude Opus 4.7</div>
-                                    <div class="text-[10px] text-cyan-600 font-bold uppercase tracking-widest model-status">Selected</div>
-                                </div>
-                            </div>
-                            <div class="model-option opacity-50 p-4 rounded-xl border border-gray-200 flex items-center gap-3 hover:opacity-100 transition-all cursor-pointer active:scale-95" data-model="gpt">
-                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <i data-lucide="bot" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-xs font-bold">GPT‑5.2</div>
-                                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest model-status">Available</div>
-                                </div>
-                            </div>
-                            <div class="model-option opacity-50 p-4 rounded-xl border border-gray-200 flex items-center gap-3 hover:opacity-100 transition-all cursor-pointer active:scale-95" data-model="gemini">
-                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-slate-400">
-                                    <i data-lucide="sparkles" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-xs font-bold text-slate-600">KIMI K2.5</div>
-                                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest model-status">Available</div>
-                                </div>
-                            </div>
-                            <div class="model-option opacity-50 p-4 rounded-xl border border-gray-200 flex items-center gap-3 hover:opacity-100 transition-all cursor-pointer active:scale-95" data-model="grok">
-                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-slate-400">
-                                    <i data-lucide="brain" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-xs font-bold text-slate-600">Grok-4</div>
-                                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest model-status">Available</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-12 p-4 rounded-xl bg-slate-900 text-white shadow-lg">
-                            <div class="text-[9px] font-bold text-slate-500 uppercase mb-2">Match Stats</div>
-                            <div class="text-xs jetbrains text-cyan-400" id="statPrompts">Prompts: 14</div>
-                            <div class="text-xs jetbrains text-slate-400 mt-1" id="statTokens">Tokens: 4.2k</div>
-                        </div>
-                    </div>
-                    <!-- Main: Editor Area -->
-                    <div class="flex-1 p-8 flex flex-col">
-                        <div class="flex items-center justify-between mb-8">
-                            <div>
-                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Current Challenge</h4>
-                                <p class="text-lg font-bold text-slate-800 italic">"Build a minimal portfolio for a Cat Artist."</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Your Stake</div>
-                                <div class="text-xl font-extrabold text-cyan-500 jetbrains">$12.50 SOL</div>
-                            </div>
-                        </div>
-                        <!-- Coding Visual -->
-                        <div class="bg-slate-900 rounded-2xl p-6 flex-1 font-mono text-sm shadow-2xl relative group overflow-hidden">
-                            <div class="flex gap-4 mb-4 border-b border-slate-800 pb-2" id="fileTabs">
-                                <div class="file-tab text-cyan-400 border-b border-cyan-400 pb-1 cursor-pointer transition-all" data-file="html">index.html</div>
-                                <div class="file-tab text-slate-500 hover:text-slate-300 transition-colors cursor-pointer" data-file="css">style.css</div>
-                                <div class="file-tab text-slate-500 hover:text-slate-300 transition-colors cursor-pointer" data-file="js">app.js</div>
-                            </div>
-                            <div class="text-slate-300 leading-relaxed overflow-hidden jetbrains relative h-full">
-                                <div id="code-html" class="code-view">
-                                    <span class="text-purple-400">&lt;div</span> <span class="text-cyan-400">class</span>=<span class="text-yellow-200">"hero-grid"</span><span class="text-purple-400">&gt;</span><br>
-                                    &nbsp;&nbsp;<span class="text-slate-500">// Vibe-coding in progress...</span><br>
-                                    &nbsp;&nbsp;<span class="text-purple-400">&lt;h1&gt;</span>The Whiskers Gallery<span class="text-purple-400">&lt;/h1&gt;</span><br>
-                                    &nbsp;&nbsp;<span class="text-purple-400">&lt;nav&gt;</span><br>
-                                    &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-purple-400">&lt;a</span> <span class="text-cyan-400">href</span>=<span class="text-yellow-200">"#"</span><span class="text-purple-400">&gt;</span>Portfolio<span class="text-purple-400">&lt;/a&gt;</span><br>
-                                    &nbsp;&nbsp;<span class="text-purple-400">&lt;/nav&gt;</span><br>
-                                    <span class="text-cyan-400 animate-pulse">|</span>
-                                </div>
-                                <div id="code-css" class="code-view hidden text-pink-300">
-                                    <span class="text-yellow-400">.hero-grid</span> {<br>
-                                    &nbsp;&nbsp;<span class="text-cyan-400">display</span>: <span class="text-white">grid</span>;<br>
-                                    &nbsp;&nbsp;<span class="text-cyan-400">gap</span>: <span class="text-white">2rem</span>;<br>
-                                    &nbsp;&nbsp;<span class="text-cyan-400">padding</span>: <span class="text-white">40px</span>;<br>
-                                    }<br>
-                                    <span class="text-yellow-400">h1</span> { <span class="text-cyan-400">font-weight</span>: <span class="text-white">900</span>; }
-                                </div>
-                                <div id="code-js" class="code-view hidden text-yellow-100">
-                                    <span class="text-purple-400">const</span> gallery = <span class="text-cyan-400">document</span>.querySelector(<span class="text-yellow-200">'.hero-grid'</span>);<br><br>
-                                    <span class="text-slate-500">// Initialize cat artist gallery</span><br>
-                                    <span class="text-purple-400">function</span> <span class="text-cyan-400">initArena</span>() {<br>
-                                    &nbsp;&nbsp;<span class="text-cyan-400">console</span>.log(<span class="text-yellow-200">"Battle started"</span>);<br>
-                                    }
-                                </div>
-                            </div>
-                            <!-- Live Preview Popup Overlay -->
-                            <div class="absolute bottom-6 right-6 w-48 h-32 bg-white rounded-xl shadow-2xl border border-gray-200 p-2 transform rotate-2 group-hover:rotate-0 transition-all">
-                                <div class="text-[8px] font-bold text-slate-400 uppercase mb-1">Preview</div>
-                                <div class="w-full h-full bg-slate-50 rounded flex items-center justify-center border border-gray-100" id="previewBox">
-                                    <div class="text-[10px] font-bold text-slate-800">The Whiskers...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="flex flex-col md:flex-row h-auto md:h-[580px]">
+  <!-- LEFT: Chat Panel -->
+  <div class="w-full md:w-1/2 border-r border-gray-100 flex flex-col bg-white">
+    <div class="flex-1 p-5 flex flex-col gap-3 overflow-hidden">
+      <div class="self-end max-w-[85%] bg-cyan-50 border border-cyan-100 rounded-2xl px-4 py-3">
+        <p class="text-xs font-semibold text-cyan-900">Build a neon-themed expense tracker with categories and a spending chart</p>
+      </div>
+      <div class="self-start max-w-[85%] bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
+        <p class="text-xs text-slate-500 mb-2 leading-relaxed">Here's a full expense tracker with Chart.js integration, category tags, and a glowing neon UI theme:</p>
+        <div class="bg-slate-900 rounded-xl p-3 text-[10px] jetbrains leading-relaxed">
+          <p class="text-purple-400">&lt;!DOCTYPE html&gt;</p>
+          <p class="text-cyan-400">&lt;div class=<span class="text-yellow-300">"dashboard"</span>&gt;</p>
+          <p class="text-slate-400">&nbsp;&nbsp;&lt;h1&gt;SpendTrack&lt;/h1&gt;</p>
+          <p class="text-green-400">&nbsp;&nbsp;&lt;canvas id=<span class="text-yellow-300">"chart"</span>/&gt;</p>
+          <p class="text-cyan-400 animate-pulse">▊</p>
+        </div>
+      </div>
+      <div class="self-end max-w-[85%] bg-cyan-50 border border-cyan-100 rounded-2xl px-4 py-3">
+        <p class="text-xs font-semibold text-cyan-900">Add a dark sidebar with emoji category icons and total balance card</p>
+      </div>
+      <div class="self-start max-w-[85%] bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
+        <p class="text-xs text-slate-500 leading-relaxed">Done! Added sidebar with 🍔 Food, 🚗 Transport, 🎮 Entertainment. Balance card shows live total. <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span></p>
+      </div>
+    </div>
+    <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 flex gap-4">
+      <span class="text-[10px] jetbrains text-slate-400">Prompts: 2</span>
+      <span class="text-[10px] jetbrains text-slate-400">Tokens: 3.1k</span>
+    </div>
+    <div class="p-3 border-t border-gray-100 flex gap-2 items-center">
+      <div class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+        <p class="text-[11px] text-slate-300">Describe what to build or change...</p>
+      </div>
+      <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style="background: linear-gradient(135deg, #00d2ff, #3a7bd5);">↑</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Preview/Code Panel -->
+  <div class="flex-1 flex flex-col">
+    <div class="flex gap-1 p-2 border-b border-gray-100 bg-gray-50">
+      <button id="mock-preview-btn" onclick="mockShowPreview()" class="px-4 py-1 rounded-md text-[11px] font-bold text-white" style="background: linear-gradient(135deg, #00d2ff, #3a7bd5);">Preview</button>
+      <button id="mock-code-btn" onclick="mockShowCode()" class="px-4 py-1 rounded-md text-[11px] font-bold text-slate-400 hover:text-slate-600 transition-colors">Code</button>
+    </div>
+
+    <!-- Preview -->
+    <div id="mock-preview" class="flex-1 overflow-hidden" style="background: #0d0d1a;">
+      <div class="flex h-full">
+        <!-- Sidebar -->
+        <div class="w-40 border-r border-slate-700/50 p-3 flex flex-col gap-1" style="background: #111126;">
+          <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Categories</p>
+          <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg" style="background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.2);">
+            <span class="text-xs">🍔</span><span class="text-[10px] font-bold text-cyan-400">Food</span>
+            <span class="text-[9px] text-slate-500 ml-auto">$240</span>
+          </div>
+          <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-700/30">
+            <span class="text-xs">🚗</span><span class="text-[10px] text-slate-400">Transport</span>
+            <span class="text-[9px] text-slate-500 ml-auto">$89</span>
+          </div>
+          <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-700/30">
+            <span class="text-xs">🎮</span><span class="text-[10px] text-slate-400">Gaming</span>
+            <span class="text-[9px] text-slate-500 ml-auto">$60</span>
+          </div>
+          <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-700/30">
+            <span class="text-xs">🛍️</span><span class="text-[10px] text-slate-400">Shopping</span>
+            <span class="text-[9px] text-slate-500 ml-auto">$120</span>
+          </div>
+          <div class="mt-auto p-2 rounded-xl" style="background: linear-gradient(135deg, rgba(0,210,255,0.15), rgba(58,123,213,0.15)); border: 1px solid rgba(0,210,255,0.2);">
+            <p class="text-[9px] text-slate-400 mb-0.5">Total Spent</p>
+            <p class="text-sm font-black" style="background: linear-gradient(135deg, #00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$509</p>
+          </div>
+        </div>
+        <!-- Main content -->
+        <div class="flex-1 p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-white" style="text-shadow: 0 0 20px rgba(0,210,255,0.4);">SpendTrack</h3>
+            <span class="text-[9px] px-2 py-0.5 rounded-full font-bold text-cyan-400" style="background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.2);">June 2026</span>
+          </div>
+          <!-- Fake bar chart -->
+          <div class="flex-1 flex flex-col justify-end gap-1">
+            <div class="flex items-end gap-2 h-28">
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 65%; background: linear-gradient(to top, #00d2ff, #3a7bd5); box-shadow: 0 0 10px rgba(0,210,255,0.4);"></div>
+                <span class="text-[8px] text-slate-500">Mon</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 40%; background: linear-gradient(to top, #00d2ff55, #3a7bd555);"></div>
+                <span class="text-[8px] text-slate-500">Tue</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 80%; background: linear-gradient(to top, #00d2ff, #3a7bd5); box-shadow: 0 0 10px rgba(0,210,255,0.4);"></div>
+                <span class="text-[8px] text-slate-500">Wed</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 30%; background: linear-gradient(to top, #00d2ff55, #3a7bd555);"></div>
+                <span class="text-[8px] text-slate-500">Thu</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 55%; background: linear-gradient(to top, #00d2ff, #3a7bd5); box-shadow: 0 0 10px rgba(0,210,255,0.4);"></div>
+                <span class="text-[8px] text-slate-500">Fri</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 90%; background: linear-gradient(to top, #00d2ff, #3a7bd5); box-shadow: 0 0 15px rgba(0,210,255,0.5);"></div>
+                <span class="text-[8px] text-slate-500">Sat</span>
+              </div>
+              <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="w-full rounded-t-md" style="height: 45%; background: linear-gradient(to top, #00d2ff55, #3a7bd555);"></div>
+                <span class="text-[8px] text-slate-500">Sun</span>
+              </div>
+            </div>
+            <div class="h-px bg-slate-700/50"></div>
+          </div>
+          <!-- Recent transactions -->
+          <div class="space-y-1">
+            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Recent</p>
+            <div class="flex items-center justify-between py-1">
+              <div class="flex items-center gap-2"><span class="text-xs">🍔</span><span class="text-[10px] text-slate-300">Burger Palace</span></div>
+              <span class="text-[10px] font-bold text-red-400">-$24.50</span>
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <div class="flex items-center gap-2"><span class="text-xs">🎮</span><span class="text-[10px] text-slate-300">Steam Store</span></div>
+              <span class="text-[10px] font-bold text-red-400">-$59.99</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code view (hidden by default) -->
+    <div id="mock-code" class="flex-1 overflow-auto hidden" style="background: #0a0a0a;">
+      <pre class="p-4 text-[10px] jetbrains leading-relaxed"><span class="text-slate-500">&lt;!DOCTYPE html&gt;</span>
+<span class="text-purple-400">&lt;html&gt;</span>
+<span class="text-purple-400">&lt;head&gt;</span>
+  <span class="text-cyan-400">&lt;title&gt;</span><span class="text-white">SpendTrack</span><span class="text-cyan-400">&lt;/title&gt;</span>
+  <span class="text-slate-500">&lt;style&gt;</span>
+    <span class="text-yellow-300">.dashboard</span> {
+      <span class="text-cyan-400">display</span>: <span class="text-white">flex</span>;
+      <span class="text-cyan-400">background</span>: <span class="text-green-400">#0d0d1a</span>;
+      <span class="text-cyan-400">height</span>: <span class="text-white">100vh</span>;
+    }
+    <span class="text-yellow-300">.sidebar</span> {
+      <span class="text-cyan-400">width</span>: <span class="text-white">200px</span>;
+      <span class="text-cyan-400">background</span>: <span class="text-green-400">#111126</span>;
+      <span class="text-cyan-400">border-right</span>: <span class="text-white">1px solid</span> <span class="text-green-400">rgba(0,210,255,0.1)</span>;
+    }
+    <span class="text-yellow-300">.neon-text</span> {
+      <span class="text-cyan-400">color</span>: <span class="text-green-400">#00d2ff</span>;
+      <span class="text-cyan-400">text-shadow</span>: <span class="text-white">0 0 20px</span> <span class="text-green-400">rgba(0,210,255,0.5)</span>;
+    }
+    <span class="text-yellow-300">.bar</span> {
+      <span class="text-cyan-400">background</span>: <span class="text-white">linear-gradient</span>(<span class="text-green-400">#00d2ff</span>, <span class="text-green-400">#3a7bd5</span>);
+      <span class="text-cyan-400">box-shadow</span>: <span class="text-white">0 0 10px</span> <span class="text-green-400">rgba(0,210,255,0.4)</span>;
+    }
+  <span class="text-slate-500">&lt;/style&gt;</span>
+<span class="text-purple-400">&lt;/head&gt;</span>
+<span class="text-purple-400">&lt;body&gt;</span>
+  <span class="text-cyan-400">&lt;div</span> <span class="text-yellow-300">class</span>=<span class="text-green-400">"dashboard"</span><span class="text-cyan-400">&gt;</span>
+    <span class="text-cyan-400">&lt;aside</span> <span class="text-yellow-300">class</span>=<span class="text-green-400">"sidebar"</span><span class="text-cyan-400">&gt;</span>
+      <span class="text-cyan-400">&lt;h2</span> <span class="text-yellow-300">class</span>=<span class="text-green-400">"neon-text"</span><span class="text-cyan-400">&gt;</span><span class="text-white">SpendTrack</span><span class="text-cyan-400">&lt;/h2&gt;</span>
+      <span class="text-slate-500">&lt;!-- categories --&gt;</span>
+    <span class="text-cyan-400">&lt;/aside&gt;</span>
+    <span class="text-cyan-400">&lt;main&gt;</span>
+      <span class="text-cyan-400">&lt;div</span> <span class="text-yellow-300">class</span>=<span class="text-green-400">"chart"</span><span class="text-cyan-400">&gt;</span>
+        <span class="text-slate-500">&lt;!-- bar chart --&gt;</span>
+      <span class="text-cyan-400">&lt;/div&gt;</span>
+    <span class="text-cyan-400">&lt;/main&gt;</span>
+  <span class="text-cyan-400">&lt;/div&gt;</span>
+<span class="text-purple-400">&lt;/body&gt;</span>
+<span class="text-purple-400">&lt;/html&gt;</span></pre>
+    </div>
+  </div>
+</div>
             </div>
         </div>
     </section>
 
+    <!-- Marquee -->
+<div class="py-12 bg-transparent border-t border-b border-gray-100 overflow-hidden">
+  <p class="text-center text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">Battle with the world's best AI models</p>
+  <div style="display: inline-flex; animation: marquee 30s linear infinite; white-space: nowrap;">
+    <!-- Set 1 -->
+    <div style="display: inline-flex; align-items: center; gap: 64px; padding: 0 64px;">
+      <img src="/logos/openai.svg" alt="OpenAI" style="height: 28px; width: auto;">
+      <img src="/logos/anthropic.svg" alt="Anthropic" style="height: 28px; width: auto;">
+      <img src="/logos/gemini.svg" alt="Gemini" style="height: 28px; width: auto;">
+      <img src="/logos/kimi.svg" alt="Kimi" style="height: 28px; width: auto;">
+      <img src="/logos/grok.svg" alt="Grok" style="height: 28px; width: auto;">
+    </div>
+    <!-- Set 2 duplicate -->
+    <div style="display: inline-flex; align-items: center; gap: 64px; padding: 0 64px;">
+      <img src="/logos/openai.svg" alt="OpenAI" style="height: 28px; width: auto;">
+      <img src="/logos/anthropic.svg" alt="Anthropic" style="height: 28px; width: auto;">
+      <img src="/logos/gemini.svg" alt="Gemini" style="height: 28px; width: auto;">
+      <img src="/logos/kimi.svg" alt="Kimi" style="height: 28px; width: auto;">
+      <img src="/logos/grok.svg" alt="Grok" style="height: 28px; width: auto;">
+    </div>
+  </div>
+</div>
+
     <!-- Detailed Explanation Section -->
-    <section class="py-24 bg-slate-50/50">
+    <section id="BattleUnfolds" class="py-24 bg-slate-50/50">
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center mb-20">
                 <h2 class="text-4xl md:text-5xl font-extrabold mb-6">How the Battle Unfolds</h2>
@@ -377,7 +471,7 @@
                             </div>
                         </button>
                         <div class="faq-content px-6">
-                            <p class="text-xs text-slate-500 leading-relaxed font-medium">We use GGemini 3 Pro with a strictly engineered rubric. It evaluates code structure, UI consistency, and prompt efficiency. Since Gemini isn't available for battling, it remains an impartial third-party referee.</p>
+                            <p class="text-xs text-slate-500 leading-relaxed font-medium">We use Gemini 3 Pro with a strictly engineered rubric. It evaluates code structure, UI consistency, and prompt efficiency. Since Gemini isn't available for battling, it remains an impartial third-party referee.</p>
                         </div>
                     </div>
 
@@ -432,7 +526,7 @@
                             </div>
                         </button>
                         <div class="faq-content px-6">
-                            <p class="text-xs text-slate-500 leading-relaxed font-medium">We use the Solana blockchain for instant, low-fee payouts. Once the AI judge declares a winner, the $20 bounty is pushed to your connected wallet within seconds.</p>
+                            <p class="text-xs text-slate-500 leading-relaxed font-medium">We use the Solana blockchain for fast, low-fee payouts. Once the AI judge declares a winner, the $20 bounty is pushed to your connected wallet within minutes.</p>
                         </div>
                     </div>
 
@@ -499,7 +593,7 @@
                 </g>
                 <defs>
                     <linearGradient id="logoGradFooter" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+                        <stop offset="0%" style="stop-color:#00d2ff;stop-opacity:1" />
                         <stop offset="100%" style="stop-color:#3a7bd5;stop-opacity:1" />
                     </linearGradient>
                 </defs>
@@ -650,6 +744,23 @@
                 document.body.style.overflow = 'auto';
             }
         }
+        // Mock preview/code toggle
+function mockShowPreview() {
+  document.getElementById('mock-preview').classList.remove('hidden');
+  document.getElementById('mock-code').classList.add('hidden');
+  document.getElementById('mock-preview-btn').style.background = 'linear-gradient(135deg, #00d2ff, #3a7bd5)';
+  document.getElementById('mock-preview-btn').style.color = 'white';
+  document.getElementById('mock-code-btn').style.background = 'transparent';
+  document.getElementById('mock-code-btn').style.color = '#94a3b8';
+}
+function mockShowCode() {
+  document.getElementById('mock-preview').classList.add('hidden');
+  document.getElementById('mock-code').classList.remove('hidden');
+  document.getElementById('mock-code-btn').style.background = 'linear-gradient(135deg, #00d2ff, #3a7bd5)';
+  document.getElementById('mock-code-btn').style.color = 'white';
+  document.getElementById('mock-preview-btn').style.background = 'transparent';
+  document.getElementById('mock-preview-btn').style.color = '#94a3b8';
+}
     </script>
 </body>
 </html>

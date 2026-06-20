@@ -104,7 +104,7 @@ const styles: Record<string, React.CSSProperties> = {
   label: { display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '6px' },
   input: {
     width: '100%', background: '#ffffff', border: '1px solid #cbd5e1', // White background, soft gray border
-    borderRadius: '8px', padding: '10px 14px', color: '#1a1a1a',        // Dark text for readability
+    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',        // Dark text for readability
     fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const,
   },
   button: {

@@ -55,7 +55,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div style={{ ...styles.container, justifyContent: 'center', alignItems: 'center' }}>
-        <p style={{ color: '#555' }}>Loading...</p>
+        <p style={{ color: '#94a3b8' }}>Loading...</p>
       </div>
     )
   }
@@ -76,8 +76,8 @@ export default function Dashboard() {
         <div style={{ position: 'relative' }}>
           <div style={styles.userBtn} onClick={() => setDropdownOpen(!dropdownOpen)}>
             <span style={{ color: '#00bfff', fontSize: '13px' }}>◎ {user?.sol_balance?.toFixed(3)} SOL</span>
-            <span style={{ color: '#aaa', fontSize: '13px' }}>{user?.username}</span>
-            <span style={{ color: '#555', fontSize: '11px' }}>▼</span>
+            <span style={{ color: '#64748b', fontSize: '13px' }}>{user?.username}</span>
+            <span style={{ color: '#94a3b8', fontSize: '11px' }}>▼</span>
           </div>
           {dropdownOpen && (
             <div style={styles.dropdown}>
@@ -94,13 +94,13 @@ export default function Dashboard() {
 
         {/* HERO — window status */}
         <div style={styles.hero}>
-          <p style={{ color: '#555', fontSize: '13px', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
             Next Battle Window
           </p>
           <h2 style={{ color: '#00bfff', fontSize: '48px', fontWeight: '800', margin: '0 0 0.5rem' }}>
             EU Window
           </h2>
-          <p style={{ color: '#666', fontSize: '15px', margin: 0 }}>
+          <p style={{ color: '#64748b', fontSize: '15px', margin: 0 }}>
             Opens at 18:00 CET · 1v1 · $12.50 entry · Winner takes $20
           </p>
           <button style={styles.queueBtn} onClick={() => router.push('/queue')}>
@@ -117,8 +117,8 @@ export default function Dashboard() {
             { label: 'Total Earned', value: '0 SOL' },
           ].map(s => (
             <div key={s.label} style={styles.statCard}>
-              <div style={{ color: '#fff', fontSize: '24px', fontWeight: '700' }}>{s.value}</div>
-              <div style={{ color: '#555', fontSize: '12px', marginTop: '4px' }}>{s.label}</div>
+              <div style={{ color: '#0f172a', fontSize: '24px', fontWeight: '700' }}>{s.value}</div>
+              <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '4px' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
             <div style={{ color: '#00bfff', fontSize: '32px', fontWeight: '700', margin: '1rem 0 0.25rem' }}>
               {user?.sol_balance?.toFixed(4)} SOL
             </div>
-            <div style={{ color: '#555', fontSize: '13px', marginBottom: '1.5rem' }}>≈ $0.00 USD</div>
+            <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '1.5rem' }}>≈ $0.00 USD</div>
             <button style={styles.withdrawBtn}>Withdraw</button>
           </div>
 
@@ -144,9 +144,9 @@ export default function Dashboard() {
                 <div key={w.name} style={styles.windowRow}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={styles.windowBadge}>{w.name}</span>
-                    <span style={{ color: '#aaa', fontSize: '13px' }}>{w.start} – {w.end} {w.timezone}</span>
+                    <span style={{ color: '#64748b', fontSize: '13px' }}>{w.start} – {w.end} {w.timezone}</span>
                   </div>
-                  <span style={{ color: '#333', fontSize: '12px' }}>Closed</span>
+                  <span style={{ color: '#cbd5e1', fontSize: '12px' }}>Closed</span>
                 </div>
               ))}
             </div>
@@ -155,10 +155,10 @@ export default function Dashboard() {
           {/* SEASON CARD */}
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>Current Season</h3>
-            <div style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '1rem 0 0.25rem' }}>
+            <div style={{ color: '#0f172a', fontSize: '20px', fontWeight: '700', margin: '1rem 0 0.25rem' }}>
               Season 1
             </div>
-            <div style={{ color: '#555', fontSize: '13px', marginBottom: '1rem' }}>Your rank: —</div>
+            <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '1rem' }}>Your rank: —</div>
             <a href="/leaderboard" style={{ color: '#00bfff', fontSize: '13px', textDecoration: 'none' }}>
               View Leaderboard →
             </a>
@@ -173,7 +173,7 @@ export default function Dashboard() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: '100vh',
-    background: '#0a0a0a',
+    background: '#f8fafc',
     fontFamily: 'sans-serif',
     display: 'flex',
     flexDirection: 'column',
@@ -184,8 +184,8 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     padding: '0 2rem',
     height: '60px',
-    borderBottom: '1px solid #1a1a1a',
-    background: '#0d0d0d',
+    borderBottom: '1px solid #f1f5f9',
+    background: '#ffffff',
     position: 'sticky',
     top: 0,
     zIndex: 100,
@@ -201,7 +201,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '2rem',
   },
   navLink: {
-    color: '#666',
+    color: '#64748b',
     textDecoration: 'none',
     fontSize: '14px',
   },
@@ -213,13 +213,13 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '6px 12px',
     borderRadius: '8px',
     border: '1px solid #222',
-    background: '#111',
+    background: '#ffffff',
   },
   dropdown: {
     position: 'absolute',
     right: 0,
     top: '110%',
-    background: '#111',
+    background: '#ffffff',
     border: '1px solid #222',
     borderRadius: '8px',
     minWidth: '150px',
@@ -228,7 +228,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dropItem: {
     padding: '10px 16px',
-    color: '#aaa',
+    color: '#64748b',
     fontSize: '13px',
     cursor: 'pointer',
   },
@@ -239,8 +239,8 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '0 auto',
   },
   hero: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
+    background: '#ffffff',
+    border: '1px solid #f1f5f9',
     borderRadius: '16px',
     padding: '2.5rem',
     marginBottom: '1.5rem',
@@ -263,8 +263,8 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '1.5rem',
   },
   statCard: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
+    background: '#ffffff',
+    border: '1px solid #f1f5f9',
     borderRadius: '12px',
     padding: '1.25rem',
     textAlign: 'center',
@@ -275,8 +275,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
   },
   card: {
-    background: '#111',
-    border: '1px solid #1a1a1a',
+    background: '#ffffff',
+    border: '1px solid #f1f5f9',
     borderRadius: '12px',
     padding: '1.5rem',
   },
@@ -293,11 +293,11 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '8px 0',
-    borderBottom: '1px solid #1a1a1a',
+    borderBottom: '1px solid #f1f5f9',
   },
   windowBadge: {
-    background: '#1a1a1a',
-    color: '#555',
+    background: '#f1f5f9',
+    color: '#94a3b8',
     fontSize: '11px',
     fontWeight: '600',
     padding: '2px 8px',
@@ -305,8 +305,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   withdrawBtn: {
     background: 'transparent',
-    border: '1px solid #2a2a2a',
-    color: '#aaa',
+    border: '1px solid #e2e8f0',
+    color: '#64748b',
     borderRadius: '8px',
     padding: '8px 16px',
     fontSize: '13px',
