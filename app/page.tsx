@@ -4,7 +4,6 @@ import Typewriter from 'typewriter-effect'
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { Utensils, Car, Gamepad2, ShoppingBag, Check, ShieldCheck, Trophy, ArrowUp, Plus, X } from 'lucide-react'
-import { motion } from 'framer-motion'
 
 export default function LandingPage() {
   const [activeModal, setActiveModal] = useState<string | null>(null)
