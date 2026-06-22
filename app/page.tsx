@@ -1,5 +1,619 @@
-import { redirect } from 'next/navigation'
+'use client'
 
-export default function Home() {
-  redirect('/landing.html')
+import Typewriter from 'typewriter-effect'
+import { useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
+import { Utensils, Car, Gamepad2, ShoppingBag, Check, ShieldCheck, Trophy, ArrowUp, Plus, X } from 'lucide-react'
+import { motion } from 'framer-motion'
+
+export default function LandingPage() {
+  const [activeModal, setActiveModal] = useState<string | null>(null)
+  const [activeFaq, setActiveFaq] = useState<number | null>(null)
+  const [mockView, setMockView] = useState<'preview' | 'code'>('preview')
+
+  useEffect(() => {
+    // FAQ accordion
+    if (activeModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+  }, [activeModal])
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { background-color: #f8fafc; color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
+        .jetbrains { font-family: 'JetBrains Mono', monospace; }
+        .gradient-text { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gradient-text .Typewriter__wrapper { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gradient-text { display: block; text-align: center; }
+.gradient-text .Typewriter { display: inline-block; }
+        .gradient-text .Typewriter__cursor { color: #00d2ff; -webkit-text-fill-color: #00d2ff; }
+        .aqua-btn { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .aqua-btn:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 10px 20px -5px rgba(0, 210, 255, 0.4); }
+        .aqua-glow:hover { box-shadow: 0 0 30px rgba(0, 210, 255, 0.5); }
+        .soft-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03); }
+        .macbook-window { background: #ffffff; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 50px 100px -20px rgba(0,0,0,0.15); overflow: hidden; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .macbook-window:hover { transform: scale(1.01); }
+        .window-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-bounce { animation: bounce 1s infinite; }
+        .faq-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, padding 0.3s ease; }
+        .faq-content.open { max-height: 500px; padding-bottom: 2rem; }
+        .faq-icon { width: 24px; height: 24px; border-radius: 50%; background: white; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #94a3b8; transition: all 0.3s; flex-shrink: 0; }
+        .faq-icon.open { transform: rotate(45deg); background: #06b6d4; color: white; border-color: #06b6d4; }
+      `}</style>
+
+      {/* NAVBAR */}
+      <nav style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1.5rem', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <svg viewBox="0 0 200 200" style={{ width: '48px', height: '48px' }} xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(40, 50)">
+              <path d="M10 20 L60 120 L110 20" fill="none" stroke="url(#logoGrad)" strokeWidth="28" strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+            <defs>
+              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: '#00D2FF', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#3a7bd5', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
+            <a href="#BattleUnfolds" style={{ color: '#64748b', textDecoration: 'none', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>How it works</a>
+            <a href="#arena" style={{ color: '#64748b', textDecoration: 'none', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>The Tech</a>
+            <Link href="/signup" className="aqua-btn" style={{ color: 'white', padding: '12px 32px', borderRadius: '999px', textDecoration: 'none', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Sign Up</Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section style={{ position: 'relative', paddingTop: '11rem', paddingBottom: '8rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '800px', height: '800px', background: 'rgba(207,250,254,0.3)', borderRadius: '50%', filter: 'blur(120px)', transform: 'translate(50%, -50%)', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+
+<h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '2.5rem', lineHeight: 1, color: '#0f172a' }}>
+  The First Skill-Based <br />
+  <span className="gradient-text" style={{ marginLeft: '2rem' }}>
+    <Typewriter
+  options={{
+    strings: [
+      'Vibe-Coding League',
+      'AI Battle Arena',
+      'Prompt War Zone',
+      'Dev Showdown',
+    ],
+    autoStart: true,
+    loop: true,
+    delay: 100,
+    deleteSpeed: 50,
+  }}
+/>
+  </span>
+</h1>
+          <p style={{ fontSize: 'clamp(1rem, 2.5vw, 1.5rem)', color: '#64748b', marginBottom: '4rem', maxWidth: '48rem', margin: '0 auto 4rem', fontWeight: 500, lineHeight: 1.6 }}>
+            Put your money where your prompts are. 1v1 high-speed coding battles for developers who move fast.
+          </p>
+
+          {/* Battle Bar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 900 }}>Y</div>
+              <div>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', margin: 0 }}>you</p>
+                <p style={{ fontSize: '9px', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Claude Opus 4.7</p>
+              </div>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', marginLeft: '4px' }} className="animate-pulse" />
+            </div>
+            <div style={{ flex: 1, textAlign: 'center', margin: '0 16px' }}>
+              <p style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>Battle Prompt</p>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#334155', fontStyle: 'italic' }}>"Build a minimal expense tracker for freelancers"</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', marginRight: '4px' }} className="animate-pulse" />
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', margin: 0 }}>alex_dev</p>
+                <p style={{ fontSize: '9px', fontWeight: 700, color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>GPT-4o</p>
+              </div>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 900 }}>A</div>
+            </div>
+          </div>
+
+          {/* Macbook Window */}
+          <div className="macbook-window" style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'left' }}>
+            {/* Toolbar */}
+            <div style={{ background: '#f9fafb', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span className="window-dot" style={{ background: '#f87171' }} />
+                <span className="window-dot" style={{ background: '#fbbf24' }} />
+                <span className="window-dot" style={{ background: '#4ade80' }} />
+              </div>
+              <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: '4px 16px', borderRadius: '6px', fontSize: '10px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>VibeArena.com/match/live-777</div>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: '#ef4444', fontFamily: 'JetBrains Mono, monospace' }} className="animate-pulse">● LIVE</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em' }}>14:58 REMAINING</span>
+              </div>
+            </div>
+
+            {/* Split Panel */}
+            <div style={{ display: 'flex', height: '580px' }}>
+              {/* Chat */}
+              <div style={{ width: '50%', borderRight: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', background: 'white' }}>
+                <div style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
+                  <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: '#ecfeff', border: '1px solid #cffafe', borderRadius: '16px', padding: '12px 16px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#164e63', margin: 0 }}>Build a neon-themed expense tracker with categories and a spending chart</p>
+                  </div>
+                  <div style={{ alignSelf: 'flex-start', maxWidth: '85%', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '12px 16px' }}>
+                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px', lineHeight: 1.6 }}>Here's a full expense tracker with Chart.js integration, category tags, and a glowing neon UI theme:</p>
+                    <div style={{ background: '#0f172a', borderRadius: '10px', padding: '12px', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6 }}>
+                      <p style={{ color: '#c084fc', margin: 0 }}>&lt;!DOCTYPE html&gt;</p>
+                      <p style={{ color: '#22d3ee', margin: 0 }}>&lt;div class=<span style={{ color: '#fde047' }}>"dashboard"</span>&gt;</p>
+                      <p style={{ color: '#94a3b8', margin: 0 }}>&nbsp;&nbsp;&lt;h1&gt;SpendTrack&lt;/h1&gt;</p>
+                      <p style={{ color: '#4ade80', margin: 0 }}>&nbsp;&nbsp;&lt;canvas id=<span style={{ color: '#fde047' }}>"chart"</span>/&gt;</p>
+                      <p style={{ color: '#22d3ee', margin: 0 }} className="animate-pulse">▊</p>
+                    </div>
+                  </div>
+                  <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: '#ecfeff', border: '1px solid #cffafe', borderRadius: '16px', padding: '12px 16px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#164e63', margin: 0 }}>Add a dark sidebar with emoji category icons and total balance card</p>
+                  </div>
+                  <div style={{ alignSelf: 'flex-start', maxWidth: '85%', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '12px 16px' }}>
+                    <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.6 }}>Done! Added sidebar with 🍔 Food, 🚗 Transport, 🎮 Entertainment. Balance card shows live total. <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#22d3ee', verticalAlign: 'middle' }} className="animate-pulse" /></p>
+                  </div>
+                </div>
+                <div style={{ padding: '8px 16px', borderTop: '1px solid #f1f5f9', background: '#f9fafb', display: 'flex', gap: '16px' }}>
+                  <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>Prompts: 2</span>
+                  <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>Tokens: 3.1k</span>
+                </div>
+                <div style={{ padding: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ flex: 1, background: '#f9fafb', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px 14px' }}>
+                    <p style={{ fontSize: '11px', color: '#cbd5e1', margin: 0 }}>Describe what to build or change...</p>
+                  </div>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, flexShrink: 0 }}>↑</div>
+                </div>
+              </div>
+
+              {/* Preview/Code */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', gap: '4px', padding: '8px', borderBottom: '1px solid #f1f5f9', background: '#f9fafb' }}>
+                  <button onClick={() => setMockView('preview')} style={{ padding: '4px 16px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', background: mockView === 'preview' ? 'linear-gradient(135deg, #00d2ff, #3a7bd5)' : 'transparent', color: mockView === 'preview' ? 'white' : '#94a3b8' }}>Preview</button>
+                  <button onClick={() => setMockView('code')} style={{ padding: '4px 16px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', background: mockView === 'code' ? 'linear-gradient(135deg, #00d2ff, #3a7bd5)' : 'transparent', color: mockView === 'code' ? 'white' : '#94a3b8' }}>Code</button>
+                </div>
+
+                {mockView === 'preview' ? (
+                  <div style={{ flex: 1, background: '#0d0d1a', display: 'flex', overflow: 'hidden' }}>
+                    <div style={{ width: '160px', borderRight: '1px solid rgba(100,116,139,0.3)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '4px', background: '#111126' }}>
+                      <p style={{ fontSize: '9px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Categories</p>
+                      {[
+  [<Utensils size={12} key="i1" />, 'Food', '#22d3ee', '$240', true],
+  [<Car size={12} key="i2" />, 'Transport', '#94a3b8', '$89', false],
+  [<Gamepad2 size={12} key="i3" />, 'Gaming', '#94a3b8', '$60', false],
+  [<ShoppingBag size={12} key="i4" />, 'Shopping', '#94a3b8', '$120', false]
+].map(([icon, name, color, amount, active]) => (
+  <div key={String(name)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '8px', background: active ? 'rgba(0,210,255,0.1)' : 'transparent', border: active ? '1px solid rgba(0,210,255,0.2)' : '1px solid transparent' }}>
+    <span style={{ display: 'flex', color: String(color) }}>{icon}</span>
+    <span style={{ fontSize: '10px', fontWeight: active ? 700 : 400, color: String(color) }}>{String(name)}</span>
+    <span style={{ fontSize: '9px', color: '#475569', marginLeft: 'auto' }}>{String(amount)}</span>
+  </div>
+))}
+                      <div style={{ marginTop: 'auto', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(0,210,255,0.15), rgba(58,123,213,0.15))', border: '1px solid rgba(0,210,255,0.2)' }}>
+                        <p style={{ fontSize: '9px', color: '#94a3b8', marginBottom: '2px' }}>Total Spent</p>
+                        <p style={{ fontSize: '14px', fontWeight: 900, background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>$509</p>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: 900, color: 'white', textShadow: '0 0 20px rgba(0,210,255,0.4)', margin: 0 }}>SpendTrack</h3>
+                        <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '999px', fontWeight: 700, color: '#22d3ee', background: 'rgba(0,210,255,0.1)', border: '1px solid rgba(0,210,255,0.2)' }}>June 2026</span>
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '112px' }}>
+                          {[[65,true],[40,false],[80,true],[30,false],[55,true],[90,true],[45,false]].map(([h, lit], i) => (
+                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ width: '100%', borderRadius: '4px 4px 0 0', height: `${h}%`, background: lit ? 'linear-gradient(to top, #00d2ff, #3a7bd5)' : 'rgba(0,210,255,0.2)', boxShadow: lit ? '0 0 10px rgba(0,210,255,0.4)' : 'none' }} />
+                              <span style={{ fontSize: '8px', color: '#475569' }}>{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i]}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ height: '1px', background: 'rgba(100,116,139,0.3)' }} />
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '9px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Recent</p>
+                        {[
+  [<Utensils size={12} key="t1" />, 'Burger Palace', '-$24.50'],
+  [<Gamepad2 size={12} key="t2" />, 'Steam Store', '-$59.99']
+].map(([icon, name, amount]) => (
+  <div key={String(name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span style={{ display: 'flex', color: '#cbd5e1' }}>{icon}</span>
+      <span style={{ fontSize: '10px', color: '#cbd5e1' }}>{String(name)}</span>
+    </div>
+    <span style={{ fontSize: '10px', fontWeight: 700, color: '#f87171' }}>{String(amount)}</span>
+  </div>
+))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ flex: 1, overflow: 'auto', background: '#0a0a0a', padding: '16px' }}>
+                    <pre style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6, margin: 0 }}>
+                      <span style={{ color: '#475569' }}>&lt;!DOCTYPE html&gt;</span>{'\n'}
+                      <span style={{ color: '#c084fc' }}>&lt;html&gt;</span>{'\n'}
+                      <span style={{ color: '#c084fc' }}>&lt;head&gt;</span>{'\n'}
+                      {'  '}<span style={{ color: '#22d3ee' }}>&lt;title&gt;</span><span style={{ color: 'white' }}>SpendTrack</span><span style={{ color: '#22d3ee' }}>&lt;/title&gt;</span>{'\n'}
+                      {'  '}<span style={{ color: '#475569' }}>&lt;style&gt;</span>{'\n'}
+                      {'    '}<span style={{ color: '#fde047' }}>.dashboard</span>{' { '}<span style={{ color: '#22d3ee' }}>background</span>{': '}<span style={{ color: '#4ade80' }}>#0d0d1a</span>{'; }'}{'\n'}
+                      {'    '}<span style={{ color: '#fde047' }}>.neon-text</span>{' { '}<span style={{ color: '#22d3ee' }}>color</span>{': '}<span style={{ color: '#4ade80' }}>#00d2ff</span>{'; }'}{'\n'}
+                      {'    '}<span style={{ color: '#fde047' }}>.bar</span>{' { '}<span style={{ color: '#22d3ee' }}>background</span>{': linear-gradient('}<span style={{ color: '#4ade80' }}>#00d2ff, #3a7bd5</span>{'); }'}{'\n'}
+                      {'  '}<span style={{ color: '#475569' }}>&lt;/style&gt;</span>{'\n'}
+                      <span style={{ color: '#c084fc' }}>&lt;/head&gt;</span>{'\n'}
+                      <span style={{ color: '#c084fc' }}>&lt;body&gt;</span>{'\n'}
+                      {'  '}<span style={{ color: '#22d3ee' }}>&lt;aside</span>{' '}<span style={{ color: '#fde047' }}>class</span>{'='}<span style={{ color: '#4ade80' }}>"sidebar"</span><span style={{ color: '#22d3ee' }}>&gt;</span>{'\n'}
+                      {'    '}<span style={{ color: '#475569' }}>&lt;!-- categories --&gt;</span>{'\n'}
+                      {'  '}<span style={{ color: '#22d3ee' }}>&lt;/aside&gt;</span>{'\n'}
+                      <span style={{ color: '#c084fc' }}>&lt;/body&gt;</span>{'\n'}
+                      <span style={{ color: '#c084fc' }}>&lt;/html&gt;</span>
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MARQUEE */}
+      <div style={{ padding: '48px 0', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', overflow: 'hidden' }}>
+        <p style={{ textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '32px' }}>Battle with the world's best AI models</p>
+        <div style={{ display: 'inline-flex', animation: 'marquee 30s linear infinite', whiteSpace: 'nowrap' }}>
+          {[1,2].map(set => (
+            <div key={set} style={{ display: 'inline-flex', alignItems: 'center', gap: '120px', padding: '0 64px' }}>
+              {['openai','anthropic','gemini','kimi','grok'].map(logo => (
+                <img key={logo} src={`/logos/${logo}.svg`} alt={logo} style={{ height: '28px', width: 'auto', maxWidth: '100px', objectFit: 'contain', flexShrink: 0 }} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* HOW IT WORKS */}
+      <section id="BattleUnfolds" style={{ padding: '96px 24px', background: 'rgba(248,250,252,0.5)' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>How the Battle Unfolds</h2>
+            <p style={{ fontSize: '1.25rem', color: '#64748b', maxWidth: '42rem', margin: '0 auto' }}>From staking your SOL to claiming the bounty—here is exactly how a 1v1 Arena match works.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px' }}>
+            {[
+              { num: '1', title: 'Stake Your Entry', desc: 'Both players put up $12.50 in Solana. Our secure escrow holds the $25 pot while you prepare your prompts.', highlight: false },
+              { num: '2', title: 'Pick Your Weapon', desc: 'Choose from the top-tier models (Claude Opus 4.7, GPT‑5.2, etc). Once both players are ready, the challenge is revealed.', highlight: false },
+              { num: '3', title: '15min Vibe-Sprint', desc: 'Both players get the same prompt. You have 15 minutes to prompt, preview, and polish your way to victory.', highlight: false },
+              { num: '4', title: 'The Bounty', desc: 'Gemini audits both builds. The winner is crowned instantly and receives the $20 bounty direct to their wallet.', highlight: true },
+            ].map(card => (
+              <div key={card.num} className="soft-card" style={{ padding: '32px', borderRadius: '24px', background: card.highlight ? 'rgba(236,254,255,0.2)' : 'white', borderColor: card.highlight ? 'rgba(0,210,255,0.2)' : undefined }}>
+                <div style={{ width: '48px', height: '48px', background: card.highlight ? 'linear-gradient(135deg, #00d2ff, #3a7bd5)' : '#ecfeff', color: card.highlight ? 'white' : '#0891b2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', fontWeight: 900, fontSize: '20px', fontFamily: 'JetBrains Mono, monospace' }}>{card.num}</div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px', color: '#0f172a' }}>{card.title}</h3>
+                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.6 }}>{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* THE TECH */}
+      <section id="arena" style={{ padding: '128px 24px', background: 'white' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '96px', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#0f172a', marginBottom: '32px', lineHeight: 1.2 }}>15 Minutes of <br /><span style={{ color: '#06b6d4' }}>Pure Execution.</span></h2>
+            <p style={{ fontSize: '1.25rem', color: '#64748b', marginBottom: '48px', lineHeight: 1.6 }}>Vibe Arena isn't about typing—it's about thinking. You and your opponent get the same business idea. You have 15 minutes to prompt your chosen AI and build the best product possible.</p>
+            {[
+  { icon: <Check size={20} strokeWidth={3} />, title: 'Instant Payouts', desc: 'Winner takes the $20 pot immediately. We use Crypto (SOL/BTC) to ensure there are zero delays, middle-men, or chargebacks.' },
+  { icon: <ShieldCheck size={20} />, title: 'Unbiased AI Judge', desc: 'Gemini 1.5 Pro acts as the referee. It audits your UI design, code cleanliness, and feature completeness to pick the winner with zero bias.' },
+].map(item => (
+  <div key={item.title} style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
+    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#ecfeff', color: '#0891b2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</div>
+                <div>
+                  <h4 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: '#0f172a' }}>{item.title}</h4>
+                  <p style={{ color: '#64748b', lineHeight: 1.6 }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: '-16px', background: '#ecfeff', borderRadius: '40px', filter: 'blur(32px)', opacity: 0.5 }} />
+            <div className="macbook-window" style={{ position: 'relative' }}>
+              <div style={{ background: '#f9fafb', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '8px' }}>
+                <span className="window-dot" style={{ background: '#f87171' }} />
+                <span className="window-dot" style={{ background: '#fbbf24' }} />
+                <span className="window-dot" style={{ background: '#4ade80' }} />
+              </div>
+              <div style={{ padding: '32px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                  <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: '#f0fdf4', color: '#16a34a', marginBottom: '16px' }} className="animate-bounce">
+  <Trophy size={24} />
+</div>
+                  <h3 style={{ fontSize: '24px', fontWeight: 700, fontStyle: 'italic', color: '#0f172a' }}>Match Verdict</h3>
+                </div>
+                <div style={{ background: '#ecfeff', border: '1px solid #cffafe', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0e7490' }}>Winner: You</span>
+                      <span style={{ padding: '2px 8px', background: '#06b6d4', color: 'white', fontSize: '8px', fontWeight: 700, borderRadius: '999px' }}>+$20.00 SOL</span>
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#0e7490', fontFamily: 'JetBrains Mono, monospace' }}>92/100</span>
+                  </div>
+                  <p style={{ fontSize: '14px', color: '#164e63', lineHeight: 1.6, fontWeight: 500 }}>"Superior UI polish and a cleaner responsive layout. Code structure was highly modular."</p>
+                </div>
+                <div style={{ background: '#f9fafb', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '20px', opacity: 0.6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b' }}>Opponent</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', fontFamily: 'JetBrains Mono, monospace' }}>74/100</span>
+                  </div>
+                  <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6 }}>"Great functionality but UI suffered from inconsistent spacing on mobile viewports."</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MODEL COMPARISON */}
+<section style={{ padding: '128px 24px', background: 'white' }}>
+  <div style={{ maxWidth: '72rem', margin: '0 auto' }}>
+    
+    {/* Header */}
+    <div style={{ marginBottom: '64px' }}>
+      <p style={{ fontSize: '11px', fontWeight: 700, color: '#00d2ff', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '16px', fontFamily: 'JetBrains Mono, monospace' }}>Model Intelligence</p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '32px' }}>
+        <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1, margin: 0 }}>Choose your<br /><span style={{ color: '#00d2ff' }}>weapon.</span></h2>
+        <p style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 500, maxWidth: '28rem', lineHeight: 1.7, marginBottom: '4px' }}>Every model has a different playstyle. Win rates are calculated from real platform battles. Pick the one that matches how you think.</p>
+      </div>
+    </div>
+
+    {/* Cards */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '48px' }}>
+      {[
+        {
+          name: 'Claude Opus 4.8',
+          provider: 'Anthropic',
+          logo: 'anthropic',
+          tag: 'Top Pick',
+          tagBg: 'linear-gradient(135deg, #DE7356, #DE7356)',
+          accent: '#DE7356',
+          winRate: 58,
+          stats: [
+            { label: 'Speed', value: 82 },
+            { label: 'UI Output', value: 95 },
+            { label: 'Code Quality', value: 96 },
+          ],
+          tip: 'Be detailed and specific. Describe layout, colors, and interactions explicitly.',
+          featured: true,
+        },
+        {
+          name: 'GPT-5.5',
+          provider: 'OpenAI',
+          logo: 'openai',
+          tag: 'Most Versatile',
+          tagBg: '#74AA9C',
+          accent: '#74AA9C',
+          winRate: 52,
+          stats: [
+            { label: 'Speed', value: 94 },
+            { label: 'UI Output', value: 84 },
+            { label: 'Code Quality', value: 91 },
+          ],
+          tip: 'Short, direct prompts work best. Let it fill in the gaps.',
+          featured: false,
+        },
+        {
+          name: 'Gemini 3.1 Pro',
+          provider: 'Google',
+          logo: 'gemini',
+          tag: 'Fastest',
+          tagBg: '#0A85EA',
+          accent: '#0A85EA',
+          winRate: 47,
+          stats: [
+            { label: 'Speed', value: 98 },
+            { label: 'UI Output', value: 81 },
+            { label: 'Code Quality', value: 79 },
+          ],
+          tip: 'Give it heavy context upfront. It responds well to examples.',
+          featured: false,
+        },
+        {
+          name: 'Grok-4.1',
+          provider: 'xAI',
+          logo: 'grok',
+          tag: 'Wild Card',
+          tagBg: '#000000',
+          accent: '#000000',
+          winRate: 43,
+          stats: [
+            { label: 'Speed', value: 88 },
+            { label: 'UI Output', value: 74 },
+            { label: 'Code Quality', value: 80 },
+          ],
+          tip: 'Unconventional prompts unlock its best output. Take risks.',
+          featured: false,
+        },
+      ].map(model => (
+        <div key={model.name} style={{
+          borderRadius: '20px',
+          border: model.featured ? `2px solid ${model.accent}` : '1px solid #f1f5f9',
+          background: model.featured ? 'linear-gradient(160deg, #f0f9ff, #ffffff)' : 'white',
+          padding: '28px',
+          position: 'relative',
+          boxShadow: model.featured ? '0 20px 60px -10px rgba(0,210,255,0.15)' : '0 4px 20px rgba(0,0,0,0.03)',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+        }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-4px)'
+            e.currentTarget.style.boxShadow = model.featured ? '0 30px 80px -10px rgba(0,210,255,0.2)' : '0 20px 40px rgba(0,0,0,0.08)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = model.featured ? '0 20px 60px -10px rgba(0,210,255,0.15)' : '0 4px 20px rgba(0,0,0,0.03)'
+          }}
+        >
+          {/* Tag */}
+          <div style={{ position: 'absolute', top: '20px', right: '20px', background: model.tagBg, color: 'white', fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '999px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{model.tag}</div>
+
+          {/* Logo + Name */}
+          <div style={{ marginBottom: '24px' }}>
+            <img src={`/logos/${model.logo}.svg`} alt={model.provider} style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '12px' }} />
+            <p style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: '0 0 2px' }}>{model.name}</p>
+            <p style={{ fontSize: '11px', color: '#94a3b8', margin: 0 }}>{model.provider}</p>
+          </div>
+
+          {/* Win Rate */}
+          <div style={{ marginBottom: '24px', padding: '16px', background: '#f8fafc', borderRadius: '12px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>Platform Win Rate</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <span style={{ fontSize: '36px', fontWeight: 900, color: model.accent, fontFamily: 'JetBrains Mono, monospace', lineHeight: 1 }}>{model.winRate}</span>
+              <span style={{ fontSize: '18px', fontWeight: 700, color: model.accent }}>%</span>
+            </div>
+            <div style={{ marginTop: '10px', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${model.winRate}%`, background: model.accent, borderRadius: '2px', transition: 'width 1s ease' }} />
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+            {model.stats.map(stat => (
+              <div key={stat.label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>{stat.label}</span>
+                  <span style={{ fontSize: '11px', color: '#0f172a', fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>{stat.value}</span>
+                </div>
+                <div style={{ height: '3px', background: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${stat.value}%`, background: `linear-gradient(90deg, ${model.accent}88, ${model.accent})`, borderRadius: '2px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tip */}
+          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>Pro Tip</p>
+            <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>"{model.tip}"</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Bottom note */}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e' }} className="animate-pulse" />
+      <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>Win rates calculated from live platform data · Updated weekly</p>
+    </div>
+
+  </div>
+</section>
+
+      {/* FAQ */}
+      <section style={{ padding: '128px 24px', background: 'white' }}>
+        <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, marginBottom: '24px', color: '#0f172a', letterSpacing: '-0.02em' }}>Got Questions?</h2>
+            <p style={{ fontSize: '1.125rem', color: '#64748b', fontWeight: 500 }}>Everything you need to know about the Arena.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {[
+              { q: 'Is the AI judging biased?', a: 'We use Gemini 3 Pro with a strictly engineered rubric. It evaluates code structure, UI consistency, and prompt efficiency. Since Gemini isn\'t available for battling, it remains an impartial third-party referee.' },
+              { q: 'How do payouts work?', a: 'We use the Solana blockchain for fast, low-fee payouts. Once the AI judge declares a winner, the $20 bounty is pushed to your connected wallet within minutes.' },
+              { q: 'Which tech stack can I use?', a: 'Battles currently focus on high-speed frontend (HTML/Tailwind/JS). The environment is pre-configured so you can focus entirely on prompting and design.' },
+              { q: 'Can I use external tools?', a: 'No. To ensure a level playing field, all code must be generated within our editor. External copy-pasting is monitored and results in disqualification.' },
+              { q: 'How long do matches last?', a: 'Standard matches are 15 minutes. Competitive Pro brackets can go up to 30 minutes for more complex logic or multi-page builds.' },
+              { q: 'Is there an age limit?', a: 'Yes. You must be 18+ to participate in real-money battles. We maintain a strict focus on skill-based competition only.' },
+              { q: 'What models are available?', a: 'We stay on the bleeding edge. You can currently pick between Claude Opus 4.7, GPT‑5.2, KIMI K2.5, and Grok-4.' },
+              { q: 'What if it\'s a draw?', a: 'In the rare event of a tie, the pot is split equally between both competitors, and your platform fee for the next match is waived.' },
+            ].map((faq, i) => (
+              <div key={i}>
+                <button
+                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', borderRadius: '16px', background: '#f8fafc', border: '1px solid #f1f5f9', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s' }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', paddingRight: '16px' }}>{faq.q}</span>
+                  <span className={`faq-icon${activeFaq === i ? ' open' : ''}`} style={{ fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', flexShrink: 0, transition: 'all 0.3s', transform: activeFaq === i ? 'rotate(45deg)' : 'none', color: activeFaq === i ? 'white' : '#94a3b8', backgroundColor: activeFaq === i ? '#06b6d4' : 'white', borderColor: activeFaq === i ? '#06b6d4' : '#e2e8f0' }}>+</span>
+                </button>
+                <div className={`faq-content${activeFaq === i ? ' open' : ''}`} style={{ padding: activeFaq === i ? '0 24px 32px' : '0 24px' }}>
+                  <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6, fontWeight: 500 }}>{faq.a}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: '128px 24px' }}>
+        <div style={{ maxWidth: '48rem', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>Ready to <span style={{ color: '#06b6d4' }}>Battle?</span></h2>
+          <p style={{ fontSize: '1.25rem', color: '#64748b', marginBottom: '48px', maxWidth: '32rem', margin: '0 auto 48px', fontWeight: 500 }}>Create your account and jump into the arena.</p>
+          <Link href="/signup" className="aqua-btn aqua-glow" style={{ color: 'white', fontWeight: 800, padding: '20px 64px', borderRadius: '16px', textDecoration: 'none', fontSize: '20px', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'inline-block' }}>
+            Enter the Arena →
+          </Link>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ padding: '64px 24px', background: 'white', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '32px', opacity: 0.4 }}>
+          <svg viewBox="0 0 200 200" style={{ width: '32px', height: '32px' }} xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(40, 50)">
+              <path d="M10 20 L60 120 L110 20" fill="none" stroke="url(#logoGradFooter)" strokeWidth="28" strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+            <defs>
+              <linearGradient id="logoGradFooter" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: '#00d2ff', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#3a7bd5', stopOpacity: 1 }} />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', fontStyle: 'italic' }}>VIBE<span style={{ color: '#06b6d4' }}>ARENA</span></span>
+        </div>
+        <p style={{ fontSize: '14px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '32px', fontStyle: 'italic' }}>Skill-based competitive platform</p>
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '32px' }}>
+          {[
+            { label: 'Terms of Battle', action: () => setActiveModal('terms') },
+            { label: 'Privacy Policy', action: () => setActiveModal('privacy') },
+          ].map(item => (
+            <button key={item.label} onClick={item.action} style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', background: 'none', border: 'none', cursor: 'pointer' }}>{item.label}</button>
+          ))}
+          <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', textDecoration: 'none' }}>Twitter / X</a>
+          <a href="https://discord.com" target="_blank" rel="noreferrer" style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', textDecoration: 'none' }}>Discord</a>
+        </div>
+      </footer>
+
+      {/* MODALS */}
+      {activeModal && (
+        <div onClick={() => setActiveModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '24px', padding: '48px', maxWidth: '42rem', width: '100%', maxHeight: '80vh', overflowY: 'auto', position: 'relative' }}>
+            <button onClick={() => setActiveModal(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            {activeModal === 'terms' ? (
+              <>
+                <h2 style={{ fontSize: '30px', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>Terms of Battle</h2>
+                {['Fair Play: Competitors must use the integrated AI models provided by the platform. Any external automation or code injection will result in immediate disqualification and forfeiture of stakes.','Stakes & Payouts: All matches require a $12.50 entry fee. Payouts ($20) are processed via Solana within 10 minutes of match conclusion.','Judging: All decisions made by the Gemini AI Judge are final. No appeals will be considered unless a technical system failure occurs.','Age Requirement: You must be 18+ to participate in real-money battles.'].map((term, i) => (
+                  <p key={i} style={{ color: '#475569', lineHeight: 1.6, fontWeight: 500, marginBottom: '16px' }}><strong style={{ color: '#0f172a' }}>{i+1}. {term.split(':')[0]}:</strong>{term.split(':').slice(1).join(':')}</p>
+                ))}
+              </>
+            ) : (
+              <>
+                <h2 style={{ fontSize: '30px', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>Privacy Policy</h2>
+                {['Data Collection: We collect only essential information: your email for access and your wallet address for payouts.','Code Ownership: Code generated during battles remains private to the participants and is used only by the AI judge for evaluation.','Security: We do not store your private keys. All transactions are handled through secure web3 providers.','Third Parties: Your email will never be sold. It is used exclusively for platform notifications.'].map((item, i) => (
+                  <p key={i} style={{ color: '#475569', lineHeight: 1.6, fontWeight: 500, marginBottom: '16px' }}><strong style={{ color: '#0f172a' }}>{i+1}. {item.split(':')[0]}:</strong>{item.split(':').slice(1).join(':')}</p>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
 }

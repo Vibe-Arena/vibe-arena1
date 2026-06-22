@@ -13,14 +13,14 @@ CRITICAL RULES:
 - Build on top of what the user already has — never start from scratch on follow-up messages
 - Be concise in explanation, generous in code`
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
+      model: 'openrouter/free',
       max_tokens: 4032,
       stream: true,
       messages: [
