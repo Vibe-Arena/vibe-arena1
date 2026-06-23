@@ -3,7 +3,10 @@
 import Typewriter from 'typewriter-effect'
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Utensils, Car, Gamepad2, ShoppingBag, Check, ShieldCheck, Trophy, ArrowUp, Plus, X } from 'lucide-react'
+import Tilt from 'react-parallax-tilt'
+
 
 export default function LandingPage() {
   const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -100,32 +103,22 @@ export default function LandingPage() {
             Put your money where your prompts are. 1v1 high-speed coding battles for developers who move fast.
           </p>
 
-          {/* Battle Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 900 }}>Y</div>
-              <div>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', margin: 0 }}>you</p>
-                <p style={{ fontSize: '9px', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Claude Opus 4.7</p>
-              </div>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', marginLeft: '4px' }} className="animate-pulse" />
-            </div>
-            <div style={{ flex: 1, textAlign: 'center', margin: '0 16px' }}>
-              <p style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>Battle Prompt</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#334155', fontStyle: 'italic' }}>"Build a minimal expense tracker for freelancers"</p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', marginRight: '4px' }} className="animate-pulse" />
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', margin: 0 }}>alex_dev</p>
-                <p style={{ fontSize: '9px', fontWeight: 700, color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>GPT-4o</p>
-              </div>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 900 }}>A</div>
-            </div>
-          </div>
+          
 
-          {/* Macbook Window */}
-          <div className="macbook-window" style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'left' }}>
+                    {/* Macbook Window */}
+          <Tilt
+            tiltMaxAngleX={6}
+            tiltMaxAngleY={6}
+            perspective={1400}
+            transitionSpeed={2000}
+            scale={1.015}
+            glareEnable={true}
+            glareMaxOpacity={0.15}
+            glareColor="#00d2ff"
+            glarePosition="top"
+            style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'left' }}
+          >
+            <div className="macbook-window" style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'left' }}>
             {/* Toolbar */}
             <div style={{ background: '#f9fafb', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -261,8 +254,9 @@ export default function LandingPage() {
                   </div>
                 )}
               </div>
-            </div>
+                        </div>
           </div>
+          </Tilt>
         </div>
       </section>
 
@@ -362,7 +356,7 @@ export default function LandingPage() {
       </section>
 
       {/* MODEL COMPARISON */}
-<section style={{ padding: '128px 24px', background: 'white' }}>
+<section style={{ padding: '128px 24px', background: '#f8fafc' }}>
   <div style={{ maxWidth: '72rem', margin: '0 auto' }}>
     
     {/* Header */}
