@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'edge'
+
 export async function POST(req: NextRequest) {
   const { messages } = await req.json()
 
@@ -13,34 +15,41 @@ CRITICAL RULES:
 - Build on top of what the user already has — never start from scratch on follow-up messages
 - Be concise in explanation, generous in code`
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'openrouter/free',
-      max_tokens: 4032,
-      stream: true,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
-      ],
-    }),
-  })
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        // This is OpenRouter's official automatic free model pool slug
+        model: 'openrouter/free', 
+        max_tokens: 4032,
+        stream: true,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages,
+        ],
+      }),
+    })
 
-  if (!response.ok) {
-    const err = await response.text()
-    console.error('Groq error:', err)
-    return NextResponse.json({ error: err }, { status: 500 })
+    if (!response.ok) {
+      const err = await response.text()
+      console.error('OpenRouter error:', err)
+      return NextResponse.json({ error: err }, { status: 500 })
+    }
+
+    return new NextResponse(response.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
+
+  } catch (error: any) {
+    console.error('API Error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  return new NextResponse(response.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
 }

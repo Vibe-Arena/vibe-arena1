@@ -1,443 +1,372 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
-export default function LandingPage() {
-  const [activeModal, setActiveModal] = useState<string | null>(null)
-  const [activeFaq, setActiveFaq] = useState<number | null>(null)
-  const [mockView, setMockView] = useState<'preview' | 'code'>('preview')
+const BATTLE_DURATION = 15 * 60 // 15 minutes in seconds
 
+type Message = {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+function BattleContent() {
+    const currentCodeRef = useRef('')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const prompt = searchParams.get('prompt') || 'Build a beautiful todo app with priority levels'
+  const model = searchParams.get('model') || 'meta-llama/llama-3.1-8b-instruct:free'
+  const modelName = model.split('/')[1]?.split(':')[0] || model
+
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [currentCode, setCurrentCode] = useState('')
+  const [view, setView] = useState<'code' | 'preview'>('preview')
+  const [timeLeft, setTimeLeft] = useState(BATTLE_DURATION)
+  const [locked, setLocked] = useState(false)
+  const [promptCount, setPromptCount] = useState(0)
+  const [tokenCount, setTokenCount] = useState(0)
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Timer
   useEffect(() => {
-    // FAQ accordion
-    if (activeModal) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
+    if (locked) return
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setLocked(true)
+// Navigate to results after 2 seconds
+setTimeout(() => {
+  const params = new URLSearchParams({
+    prompt: prompt,
+    code: currentCodeRef.current,
+  })
+  router.push(`/results?${params.toString()}`)
+}, 2000)
+return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [locked])
+
+  // Tab close warning
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!locked) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
     }
-  }, [activeModal])
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [locked])
+
+  // Auto scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0')
+    const s = (secs % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
+
+  const timerColor = timeLeft <= 30 ? '#ff4d4d' : timeLeft <= 120 ? '#f5a623' : '#00bfff'
+
+  const extractCode = (text: string) => {
+    // Try to extract from markdown code blocks first
+    const mdMatch = text.match(/```(?:html)?\s*(<!DOCTYPE[\s\S]*?<\/html>)\s*```/i)
+    if (mdMatch) return mdMatch[1]
+    // Fall back to raw HTML
+    const rawMatch = text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
+    if (rawMatch) return rawMatch[0]
+    return ''
+  }
+
+  const sendMessage = async () => {
+    if (!input.trim() || isStreaming || locked) return
+
+    const userMessage: Message = { role: 'user', content: input }
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
+    setInput('')
+    setPromptCount(p => p + 1)
+    setIsStreaming(true)
+
+    let fullResponse = ''
+    const assistantMessage: Message = { role: 'assistant', content: '' }
+    setMessages(prev => [...prev, assistantMessage])
+
+    try {
+      const res = await fetch('/api/battle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages, model }),
+      })
+
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
+
+      while (reader) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+
+        for (const line of lines) {
+          const data = line.slice(6)
+          if (data === '[DONE]') break
+          try {
+            const parsed = JSON.parse(data)
+            const token = parsed.choices?.[0]?.delta?.content || ''
+            fullResponse += token
+            setTokenCount(prev => prev + token.length)
+            setMessages(prev => {
+              const updated = [...prev]
+              updated[updated.length - 1] = { role: 'assistant', content: fullResponse }
+              return updated
+            })
+          } catch { }
+        }
+      }
+
+      const code = extractCode(fullResponse)
+      if (code) setCurrentCode(code)
+        if (code) currentCodeRef.current = code
+
+    } catch (err) {
+      setMessages(prev => {
+        const updated = [...prev]
+        updated[updated.length - 1] = { role: 'assistant', content: 'Something went wrong. Try again.' }
+        return updated
+      })
+    }
+
+    setIsStreaming(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-        body { background-color: #f8fafc; color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
-        .jetbrains { font-family: 'JetBrains Mono', monospace; }
-        .gradient-text { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .aqua-btn { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .aqua-btn:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 10px 20px -5px rgba(0, 210, 255, 0.4); }
-        .aqua-glow:hover { box-shadow: 0 0 30px rgba(0, 210, 255, 0.5); }
-        .soft-card { background: #ffffff; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03); }
-        .macbook-window { background: #ffffff; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 50px 100px -20px rgba(0,0,0,0.15); overflow: hidden; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .macbook-window:hover { transform: scale(1.01); }
-        .window-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .animate-bounce { animation: bounce 1s infinite; }
-        .faq-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, padding 0.3s ease; }
-        .faq-content.open { max-height: 500px; padding-bottom: 2rem; }
-        .faq-icon { width: 24px; height: 24px; border-radius: 50%; background: white; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #94a3b8; transition: all 0.3s; flex-shrink: 0; }
-        .faq-icon.open { transform: rotate(45deg); background: #06b6d4; color: white; border-color: #06b6d4; }
-      `}</style>
+    <div style={styles.container}>
 
-      {/* NAVBAR */}
-      <nav style={{ position: 'fixed', top: 0, width: '100%', zIndex: 50, background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #f1f5f9' }}>
-        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1.5rem', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <svg viewBox="0 0 200 200" style={{ width: '48px', height: '48px' }} xmlns="http://www.w3.org/2000/svg">
-            <g transform="translate(40, 50)">
-              <path d="M10 20 L60 120 L110 20" fill="none" stroke="url(#logoGrad)" strokeWidth="28" strokeLinecap="round" strokeLinejoin="round" />
-            </g>
-            <defs>
-              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: '#00D2FF', stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: '#3a7bd5', stopOpacity: 1 }} />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-            <a href="#BattleUnfolds" style={{ color: '#64748b', textDecoration: 'none', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>How it works</a>
-            <a href="#arena" style={{ color: '#64748b', textDecoration: 'none', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>The Tech</a>
-            <Link href="/signup" className="aqua-btn" style={{ color: 'white', padding: '12px 32px', borderRadius: '999px', textDecoration: 'none', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Sign Up</Link>
-          </div>
+      {/* TOP BAR */}
+      <div style={styles.topBar}>
+        <div style={styles.topLeft}>
+          <span style={{ color: '#00bfff', fontWeight: '700', fontSize: '14px' }}>Vibe Arena</span>
+          <span style={{ color: '#cbd5e1', fontSize: '12px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {prompt}
+          </span>
         </div>
-      </nav>
 
-      {/* HERO */}
-      <section style={{ position: 'relative', paddingTop: '11rem', paddingBottom: '8rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, right: 0, width: '800px', height: '800px', background: 'rgba(207,250,254,0.3)', borderRadius: '50%', filter: 'blur(120px)', transform: 'translate(50%, -50%)', pointerEvents: 'none' }} />
-        <div style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '2.5rem', lineHeight: 1, color: '#0f172a' }}>
-            The First Skill-Based <br /><span className="gradient-text">Vibe-Coding League.</span>
-          </h1>
-          <p style={{ fontSize: 'clamp(1rem, 2.5vw, 1.5rem)', color: '#64748b', marginBottom: '4rem', maxWidth: '48rem', margin: '0 auto 4rem', fontWeight: 500, lineHeight: 1.6 }}>
-            Put your money where your prompts are. 1v1 high-speed coding battles for developers who move fast.
-          </p>
-
-          {/* Battle Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 900 }}>Y</div>
-              <div>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', margin: 0 }}>you</p>
-                <p style={{ fontSize: '9px', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Claude Opus 4.7</p>
-              </div>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', marginLeft: '4px' }} className="animate-pulse" />
-            </div>
-            <div style={{ flex: 1, textAlign: 'center', margin: '0 16px' }}>
-              <p style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>Battle Prompt</p>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#334155', fontStyle: 'italic' }}>"Build a minimal expense tracker for freelancers"</p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', marginRight: '4px' }} className="animate-pulse" />
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b', margin: 0 }}>alex_dev</p>
-                <p style={{ fontSize: '9px', fontWeight: 700, color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>GPT-4o</p>
-              </div>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 900 }}>A</div>
-            </div>
-          </div>
-
-          {/* Macbook Window */}
-          <Tilt
-            tiltMaxAngleX={6}
-            tiltMaxAngleY={6}
-            perspective={1400}
-            transitionSpeed={2000}
-            scale={1.015}
-            glareEnable={true}
-            glareMaxOpacity={0.15}
-            glareColor="#00d2ff"
-            glarePosition="top"
-            style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'left' }}
-          >
-            <div className="macbook-window" style={{ maxWidth: '64rem', margin: '0 auto', textAlign: 'left' }}>
-            {/* Toolbar */}
-            <div style={{ background: '#f9fafb', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <span className="window-dot" style={{ background: '#f87171' }} />
-                <span className="window-dot" style={{ background: '#fbbf24' }} />
-                <span className="window-dot" style={{ background: '#4ade80' }} />
-              </div>
-              <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: '4px 16px', borderRadius: '6px', fontSize: '10px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>VibeArena.com/match/live-777</div>
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 700, color: '#ef4444', fontFamily: 'JetBrains Mono, monospace' }} className="animate-pulse">● LIVE</span>
-                <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em' }}>14:58 REMAINING</span>
-              </div>
-            </div>
-
-            {/* Split Panel */}
-            <div style={{ display: 'flex', height: '580px' }}>
-              {/* Chat */}
-              <div style={{ width: '50%', borderRight: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', background: 'white' }}>
-                <div style={{ flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
-                  <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: '#ecfeff', border: '1px solid #cffafe', borderRadius: '16px', padding: '12px 16px' }}>
-                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#164e63', margin: 0 }}>Build a neon-themed expense tracker with categories and a spending chart</p>
-                  </div>
-                  <div style={{ alignSelf: 'flex-start', maxWidth: '85%', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '12px 16px' }}>
-                    <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px', lineHeight: 1.6 }}>Here's a full expense tracker with Chart.js integration, category tags, and a glowing neon UI theme:</p>
-                    <div style={{ background: '#0f172a', borderRadius: '10px', padding: '12px', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6 }}>
-                      <p style={{ color: '#c084fc', margin: 0 }}>&lt;!DOCTYPE html&gt;</p>
-                      <p style={{ color: '#22d3ee', margin: 0 }}>&lt;div class=<span style={{ color: '#fde047' }}>"dashboard"</span>&gt;</p>
-                      <p style={{ color: '#94a3b8', margin: 0 }}>&nbsp;&nbsp;&lt;h1&gt;SpendTrack&lt;/h1&gt;</p>
-                      <p style={{ color: '#4ade80', margin: 0 }}>&nbsp;&nbsp;&lt;canvas id=<span style={{ color: '#fde047' }}>"chart"</span>/&gt;</p>
-                      <p style={{ color: '#22d3ee', margin: 0 }} className="animate-pulse">▊</p>
-                    </div>
-                  </div>
-                  <div style={{ alignSelf: 'flex-end', maxWidth: '85%', background: '#ecfeff', border: '1px solid #cffafe', borderRadius: '16px', padding: '12px 16px' }}>
-                    <p style={{ fontSize: '12px', fontWeight: 600, color: '#164e63', margin: 0 }}>Add a dark sidebar with emoji category icons and total balance card</p>
-                  </div>
-                  <div style={{ alignSelf: 'flex-start', maxWidth: '85%', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '12px 16px' }}>
-                    <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.6 }}>Done! Added sidebar with 🍔 Food, 🚗 Transport, 🎮 Entertainment. Balance card shows live total. <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#22d3ee', verticalAlign: 'middle' }} className="animate-pulse" /></p>
-                  </div>
-                </div>
-                <div style={{ padding: '8px 16px', borderTop: '1px solid #f1f5f9', background: '#f9fafb', display: 'flex', gap: '16px' }}>
-                  <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>Prompts: 2</span>
-                  <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'JetBrains Mono, monospace' }}>Tokens: 3.1k</span>
-                </div>
-                <div style={{ padding: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <div style={{ flex: 1, background: '#f9fafb', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '10px 14px' }}>
-                    <p style={{ fontSize: '11px', color: '#cbd5e1', margin: 0 }}>Describe what to build or change...</p>
-                  </div>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, flexShrink: 0 }}>↑</div>
-                </div>
-              </div>
-
-              {/* Preview/Code */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', gap: '4px', padding: '8px', borderBottom: '1px solid #f1f5f9', background: '#f9fafb' }}>
-                  <button onClick={() => setMockView('preview')} style={{ padding: '4px 16px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', background: mockView === 'preview' ? 'linear-gradient(135deg, #00d2ff, #3a7bd5)' : 'transparent', color: mockView === 'preview' ? 'white' : '#94a3b8' }}>Preview</button>
-                  <button onClick={() => setMockView('code')} style={{ padding: '4px 16px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 700, cursor: 'pointer', background: mockView === 'code' ? 'linear-gradient(135deg, #00d2ff, #3a7bd5)' : 'transparent', color: mockView === 'code' ? 'white' : '#94a3b8' }}>Code</button>
-                </div>
-
-                {mockView === 'preview' ? (
-                  <div style={{ flex: 1, background: '#0d0d1a', display: 'flex', overflow: 'hidden' }}>
-                    <div style={{ width: '160px', borderRight: '1px solid rgba(100,116,139,0.3)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '4px', background: '#111126' }}>
-                      <p style={{ fontSize: '9px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Categories</p>
-                      {[['🍔','Food','#22d3ee','$240',true],['🚗','Transport','#94a3b8','$89',false],['🎮','Gaming','#94a3b8','$60',false],['🛍️','Shopping','#94a3b8','$120',false]].map(([emoji,name,color,amount,active]) => (
-                        <div key={String(name)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '8px', background: active ? 'rgba(0,210,255,0.1)' : 'transparent', border: active ? '1px solid rgba(0,210,255,0.2)' : '1px solid transparent' }}>
-                          <span style={{ fontSize: '12px' }}>{String(emoji)}</span>
-                          <span style={{ fontSize: '10px', fontWeight: active ? 700 : 400, color: String(color) }}>{String(name)}</span>
-                          <span style={{ fontSize: '9px', color: '#475569', marginLeft: 'auto' }}>{String(amount)}</span>
-                        </div>
-                      ))}
-                      <div style={{ marginTop: 'auto', padding: '8px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(0,210,255,0.15), rgba(58,123,213,0.15))', border: '1px solid rgba(0,210,255,0.2)' }}>
-                        <p style={{ fontSize: '9px', color: '#94a3b8', marginBottom: '2px' }}>Total Spent</p>
-                        <p style={{ fontSize: '14px', fontWeight: 900, background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>$509</p>
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: 900, color: 'white', textShadow: '0 0 20px rgba(0,210,255,0.4)', margin: 0 }}>SpendTrack</h3>
-                        <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '999px', fontWeight: 700, color: '#22d3ee', background: 'rgba(0,210,255,0.1)', border: '1px solid rgba(0,210,255,0.2)' }}>June 2026</span>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '112px' }}>
-                          {[[65,true],[40,false],[80,true],[30,false],[55,true],[90,true],[45,false]].map(([h, lit], i) => (
-                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                              <div style={{ width: '100%', borderRadius: '4px 4px 0 0', height: `${h}%`, background: lit ? 'linear-gradient(to top, #00d2ff, #3a7bd5)' : 'rgba(0,210,255,0.2)', boxShadow: lit ? '0 0 10px rgba(0,210,255,0.4)' : 'none' }} />
-                              <span style={{ fontSize: '8px', color: '#475569' }}>{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i]}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ height: '1px', background: 'rgba(100,116,139,0.3)' }} />
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '9px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Recent</p>
-                        {[['🍔','Burger Palace','-$24.50'],['🎮','Steam Store','-$59.99']].map(([emoji,name,amount]) => (
-                          <div key={String(name)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '12px' }}>{String(emoji)}</span>
-                              <span style={{ fontSize: '10px', color: '#cbd5e1' }}>{String(name)}</span>
-                            </div>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#f87171' }}>{String(amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ flex: 1, overflow: 'auto', background: '#0a0a0a', padding: '16px' }}>
-                    <pre style={{ fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6, margin: 0 }}>
-                      <span style={{ color: '#475569' }}>&lt;!DOCTYPE html&gt;</span>{'\n'}
-                      <span style={{ color: '#c084fc' }}>&lt;html&gt;</span>{'\n'}
-                      <span style={{ color: '#c084fc' }}>&lt;head&gt;</span>{'\n'}
-                      {'  '}<span style={{ color: '#22d3ee' }}>&lt;title&gt;</span><span style={{ color: 'white' }}>SpendTrack</span><span style={{ color: '#22d3ee' }}>&lt;/title&gt;</span>{'\n'}
-                      {'  '}<span style={{ color: '#475569' }}>&lt;style&gt;</span>{'\n'}
-                      {'    '}<span style={{ color: '#fde047' }}>.dashboard</span>{' { '}<span style={{ color: '#22d3ee' }}>background</span>{': '}<span style={{ color: '#4ade80' }}>#0d0d1a</span>{'; }'}{'\n'}
-                      {'    '}<span style={{ color: '#fde047' }}>.neon-text</span>{' { '}<span style={{ color: '#22d3ee' }}>color</span>{': '}<span style={{ color: '#4ade80' }}>#00d2ff</span>{'; }'}{'\n'}
-                      {'    '}<span style={{ color: '#fde047' }}>.bar</span>{' { '}<span style={{ color: '#22d3ee' }}>background</span>{': linear-gradient('}<span style={{ color: '#4ade80' }}>#00d2ff, #3a7bd5</span>{'); }'}{'\n'}
-                      {'  '}<span style={{ color: '#475569' }}>&lt;/style&gt;</span>{'\n'}
-                      <span style={{ color: '#c084fc' }}>&lt;/head&gt;</span>{'\n'}
-                      <span style={{ color: '#c084fc' }}>&lt;body&gt;</span>{'\n'}
-                      {'  '}<span style={{ color: '#22d3ee' }}>&lt;aside</span>{' '}<span style={{ color: '#fde047' }}>class</span>{'='}<span style={{ color: '#4ade80' }}>"sidebar"</span><span style={{ color: '#22d3ee' }}>&gt;</span>{'\n'}
-                      {'    '}<span style={{ color: '#475569' }}>&lt;!-- categories --&gt;</span>{'\n'}
-                      {'  '}<span style={{ color: '#22d3ee' }}>&lt;/aside&gt;</span>{'\n'}
-                      <span style={{ color: '#c084fc' }}>&lt;/body&gt;</span>{'\n'}
-                      <span style={{ color: '#c084fc' }}>&lt;/html&gt;</span>
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <div style={{ ...styles.timer, color: timerColor, animation: timeLeft <= 30 ? 'pulse 1s infinite' : 'none' }}>
+          {locked ? 'LOCKED' : formatTime(timeLeft)}
         </div>
-      </section>
 
-      {/* MARQUEE */}
-      <div style={{ padding: '48px 0', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', overflow: 'hidden' }}>
-        <p style={{ textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '32px' }}>Battle with the world's best AI models</p>
-        <div style={{ display: 'inline-flex', animation: 'marquee 30s linear infinite', whiteSpace: 'nowrap' }}>
-          {[1,2].map(set => (
-            <div key={set} style={{ display: 'inline-flex', alignItems: 'center', gap: '120px', padding: '0 64px' }}>
-              {['openai','anthropic','gemini','kimi','grok'].map(logo => (
-                <img key={logo} src={`/logos/${logo}.svg`} alt={logo} style={{ height: '28px', width: 'auto', maxWidth: '100px', objectFit: 'contain', flexShrink: 0 }} />
-              ))}
-            </div>
-          ))}
+        <div style={styles.topRight}>
+          <span style={{ color: '#444', fontSize: '12px' }}>Model: <span style={{ color: '#64748b' }}>{modelName}</span></span>
         </div>
       </div>
 
-      {/* HOW IT WORKS */}
-      <section id="BattleUnfolds" style={{ padding: '96px 24px', background: 'rgba(248,250,252,0.5)' }}>
-        <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>How the Battle Unfolds</h2>
-            <p style={{ fontSize: '1.25rem', color: '#64748b', maxWidth: '42rem', margin: '0 auto' }}>From staking your SOL to claiming the bounty—here is exactly how a 1v1 Arena match works.</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '32px' }}>
-            {[
-              { num: '1', title: 'Stake Your Entry', desc: 'Both players put up $12.50 in Solana. Our secure escrow holds the $25 pot while you prepare your prompts.', highlight: false },
-              { num: '2', title: 'Pick Your Weapon', desc: 'Choose from the top-tier models (Claude Opus 4.7, GPT‑5.2, etc). Once both players are ready, the challenge is revealed.', highlight: false },
-              { num: '3', title: '15min Vibe-Sprint', desc: 'Both players get the same prompt. You have 15 minutes to prompt, preview, and polish your way to victory.', highlight: false },
-              { num: '4', title: 'The Bounty', desc: 'Gemini audits both builds. The winner is crowned instantly and receives the $20 bounty direct to their wallet.', highlight: true },
-            ].map(card => (
-              <div key={card.num} className="soft-card" style={{ padding: '32px', borderRadius: '24px', background: card.highlight ? 'rgba(236,254,255,0.2)' : 'white', borderColor: card.highlight ? 'rgba(0,210,255,0.2)' : undefined }}>
-                <div style={{ width: '48px', height: '48px', background: card.highlight ? 'linear-gradient(135deg, #00d2ff, #3a7bd5)' : '#ecfeff', color: card.highlight ? 'white' : '#0891b2', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', fontWeight: 900, fontSize: '20px', fontFamily: 'JetBrains Mono, monospace' }}>{card.num}</div>
-                <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px', color: '#0f172a' }}>{card.title}</h3>
-                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.6 }}>{card.desc}</p>
+      {locked && (
+        <div style={styles.lockBanner}>
+          🔒 Time's up! Your last build has been submitted.
+        </div>
+      )}
+
+      {/* MAIN */}
+      <div style={styles.main}>
+
+        {/* CHAT PANEL */}
+        <div style={styles.chatPanel}>
+          <div style={styles.chatMessages}>
+            {messages.length === 0 && (
+              <div style={styles.emptyChat}>
+                <p style={{ color: '#cbd5e1', fontSize: '14px', textAlign: 'center' }}>
+                  Start building! Describe what you want to create.
+                </p>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} style={{
+                ...styles.message,
+                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                background: m.role === 'user' ? '#00bfff20' : '#f1f5f9',
+                border: m.role === 'user' ? '1px solid #00bfff40' : '1px solid #222',
+              }}>
+                <p style={{ color: m.role === 'user' ? '#00bfff' : '#ccc', fontSize: '13px', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {m.content}
+                  {isStreaming && i === messages.length - 1 && m.role === 'assistant' && (
+                    <span style={{ color: '#00bfff', animation: 'pulse 1s infinite' }}>▊</span>
+                  )}
+                </p>
               </div>
             ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* CHAT STATS */}
+          <div style={styles.chatStats}>
+            <span style={{ color: '#cbd5e1', fontSize: '11px' }}>Prompts: {promptCount}</span>
+            <span style={{ color: '#cbd5e1', fontSize: '11px' }}>Tokens: {tokenCount.toLocaleString()}</span>
+            {tokenCount > 90000 && <span style={{ color: '#f5a623', fontSize: '11px' }}>⚠ Approaching limit</span>}
+          </div>
+
+          {/* INPUT */}
+          <div style={styles.inputWrap}>
+            <textarea
+              ref={inputRef}
+              style={{
+                ...styles.input,
+                opacity: locked ? 0.4 : 1,
+              }}
+              placeholder={locked ? 'Battle locked' : 'Describe what to build or change...'}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={locked || isStreaming}
+              rows={3}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || isStreaming || locked}
+              style={{
+                ...styles.sendBtn,
+                opacity: !input.trim() || isStreaming || locked ? 0.4 : 1,
+              }}
+            >
+              {isStreaming ? '...' : '↑'}
+            </button>
           </div>
         </div>
-      </section>
 
-      {/* THE TECH */}
-      <section id="arena" style={{ padding: '128px 24px', background: 'white' }}>
-        <div style={{ maxWidth: '80rem', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '96px', alignItems: 'center' }}>
-          <div>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: '#0f172a', marginBottom: '32px', lineHeight: 1.2 }}>15 Minutes of <br /><span style={{ color: '#06b6d4' }}>Pure Execution.</span></h2>
-            <p style={{ fontSize: '1.25rem', color: '#64748b', marginBottom: '48px', lineHeight: 1.6 }}>Vibe Arena isn't about typing—it's about thinking. You and your opponent get the same business idea. You have 15 minutes to prompt your chosen AI and build the best product possible.</p>
-            {[
-              { icon: '✓', title: 'Instant Payouts', desc: 'Winner takes the $20 pot immediately. We use Crypto (SOL/BTC) to ensure there are zero delays, middle-men, or chargebacks.' },
-              { icon: '🛡', title: 'Unbiased AI Judge', desc: 'Gemini 1.5 Pro acts as the referee. It audits your UI design, code cleanliness, and feature completeness to pick the winner with zero bias.' },
-            ].map(item => (
-              <div key={item.title} style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#ecfeff', color: '#0891b2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '18px' }}>{item.icon}</div>
-                <div>
-                  <h4 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: '#0f172a' }}>{item.title}</h4>
-                  <p style={{ color: '#64748b', lineHeight: 1.6 }}>{item.desc}</p>
-                </div>
+        {/* CODE/PREVIEW PANEL */}
+        <div style={styles.rightPanel}>
+
+          {/* TOGGLE */}
+          <div style={styles.toggleBar}>
+            <button
+              style={{ ...styles.toggleBtn, background: view === 'preview' ? '#00bfff' : 'transparent', color: view === 'preview' ? '#000' : '#555' }}
+              onClick={() => setView('preview')}
+            >
+              Preview
+            </button>
+            <button
+              style={{ ...styles.toggleBtn, background: view === 'code' ? '#00bfff' : 'transparent', color: view === 'code' ? '#000' : '#555' }}
+              onClick={() => setView('code')}
+            >
+              Code
+            </button>
+          </div>
+
+          {/* CONTENT */}
+          <div style={styles.rightContent}>
+            {currentCode === '' ? (
+              <div style={styles.emptyPreview}>
+                <p style={{ color: '#cbd5e1', fontSize: '14px', textAlign: 'center' }}>
+                  Your build will appear here
+                </p>
               </div>
-            ))}
-          </div>
-          <div style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', inset: '-16px', background: '#ecfeff', borderRadius: '40px', filter: 'blur(32px)', opacity: 0.5 }} />
-            <div className="macbook-window" style={{ position: 'relative' }}>
-              <div style={{ background: '#f9fafb', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '8px' }}>
-                <span className="window-dot" style={{ background: '#f87171' }} />
-                <span className="window-dot" style={{ background: '#fbbf24' }} />
-                <span className="window-dot" style={{ background: '#4ade80' }} />
-              </div>
-              <div style={{ padding: '32px' }}>
-                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                  <div style={{ display: 'inline-block', padding: '16px', borderRadius: '50%', background: '#f0fdf4', color: '#16a34a', marginBottom: '16px' }} className="animate-bounce">🏆</div>
-                  <h3 style={{ fontSize: '24px', fontWeight: 700, fontStyle: 'italic', color: '#0f172a' }}>Match Verdict</h3>
-                </div>
-                <div style={{ background: '#ecfeff', border: '1px solid #cffafe', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0e7490' }}>Winner: You</span>
-                      <span style={{ padding: '2px 8px', background: '#06b6d4', color: 'white', fontSize: '8px', fontWeight: 700, borderRadius: '999px' }}>+$20.00 SOL</span>
-                    </div>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#0e7490', fontFamily: 'JetBrains Mono, monospace' }}>92/100</span>
-                  </div>
-                  <p style={{ fontSize: '14px', color: '#164e63', lineHeight: 1.6, fontWeight: 500 }}>"Superior UI polish and a cleaner responsive layout. Code structure was highly modular."</p>
-                </div>
-                <div style={{ background: '#f9fafb', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '20px', opacity: 0.6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#64748b' }}>Opponent</span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', fontFamily: 'JetBrains Mono, monospace' }}>74/100</span>
-                  </div>
-                  <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6 }}>"Great functionality but UI suffered from inconsistent spacing on mobile viewports."</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section style={{ padding: '128px 24px', background: 'white' }}>
-        <div style={{ maxWidth: '48rem', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, marginBottom: '24px', color: '#0f172a', letterSpacing: '-0.02em' }}>Got Questions?</h2>
-            <p style={{ fontSize: '1.125rem', color: '#64748b', fontWeight: 500 }}>Everything you need to know about the Arena.</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            {[
-              { q: 'Is the AI judging biased?', a: 'We use Gemini 3 Pro with a strictly engineered rubric. It evaluates code structure, UI consistency, and prompt efficiency. Since Gemini isn\'t available for battling, it remains an impartial third-party referee.' },
-              { q: 'How do payouts work?', a: 'We use the Solana blockchain for fast, low-fee payouts. Once the AI judge declares a winner, the $20 bounty is pushed to your connected wallet within minutes.' },
-              { q: 'Which tech stack can I use?', a: 'Battles currently focus on high-speed frontend (HTML/Tailwind/JS). The environment is pre-configured so you can focus entirely on prompting and design.' },
-              { q: 'Can I use external tools?', a: 'No. To ensure a level playing field, all code must be generated within our editor. External copy-pasting is monitored and results in disqualification.' },
-              { q: 'How long do matches last?', a: 'Standard matches are 15 minutes. Competitive Pro brackets can go up to 30 minutes for more complex logic or multi-page builds.' },
-              { q: 'Is there an age limit?', a: 'Yes. You must be 18+ to participate in real-money battles. We maintain a strict focus on skill-based competition only.' },
-              { q: 'What models are available?', a: 'We stay on the bleeding edge. You can currently pick between Claude Opus 4.7, GPT‑5.2, KIMI K2.5, and Grok-4.' },
-              { q: 'What if it\'s a draw?', a: 'In the rare event of a tie, the pot is split equally between both competitors, and your platform fee for the next match is waived.' },
-            ].map((faq, i) => (
-              <div key={i}>
-                <button
-                  onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', borderRadius: '16px', background: '#f8fafc', border: '1px solid #f1f5f9', cursor: 'pointer', textAlign: 'left', transition: 'all 0.3s' }}
-                >
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', paddingRight: '16px' }}>{faq.q}</span>
-                  <span className={`faq-icon${activeFaq === i ? ' open' : ''}`} style={{ fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', flexShrink: 0, transition: 'all 0.3s', transform: activeFaq === i ? 'rotate(45deg)' : 'none', color: activeFaq === i ? 'white' : '#94a3b8', backgroundColor: activeFaq === i ? '#06b6d4' : 'white', borderColor: activeFaq === i ? '#06b6d4' : '#e2e8f0' }}>+</span>
-                </button>
-                <div className={`faq-content${activeFaq === i ? ' open' : ''}`} style={{ padding: activeFaq === i ? '0 24px 32px' : '0 24px' }}>
-                  <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6, fontWeight: 500 }}>{faq.a}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section style={{ padding: '128px 24px' }}>
-        <div style={{ maxWidth: '48rem', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>Ready to <span style={{ color: '#06b6d4' }}>Battle?</span></h2>
-          <p style={{ fontSize: '1.25rem', color: '#64748b', marginBottom: '48px', maxWidth: '32rem', margin: '0 auto 48px', fontWeight: 500 }}>Create your account and jump into the arena.</p>
-          <Link href="/signup" className="aqua-btn aqua-glow" style={{ color: 'white', fontWeight: 800, padding: '20px 64px', borderRadius: '16px', textDecoration: 'none', fontSize: '20px', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'inline-block' }}>
-            Enter the Arena →
-          </Link>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{ padding: '64px 24px', background: 'white', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '32px', opacity: 0.4 }}>
-          <svg viewBox="0 0 200 200" style={{ width: '32px', height: '32px' }} xmlns="http://www.w3.org/2000/svg">
-            <g transform="translate(40, 50)">
-              <path d="M10 20 L60 120 L110 20" fill="none" stroke="url(#logoGradFooter)" strokeWidth="28" strokeLinecap="round" strokeLinejoin="round" />
-            </g>
-            <defs>
-              <linearGradient id="logoGradFooter" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: '#00d2ff', stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: '#3a7bd5', stopOpacity: 1 }} />
-              </linearGradient>
-            </defs>
-          </svg>
-          <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', fontFamily: 'JetBrains Mono, monospace', fontStyle: 'italic' }}>VIBE<span style={{ color: '#06b6d4' }}>ARENA</span></span>
-        </div>
-        <p style={{ fontSize: '14px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '32px', fontStyle: 'italic' }}>Skill-based competitive platform</p>
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '32px' }}>
-          {[
-            { label: 'Terms of Battle', action: () => setActiveModal('terms') },
-            { label: 'Privacy Policy', action: () => setActiveModal('privacy') },
-          ].map(item => (
-            <button key={item.label} onClick={item.action} style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', background: 'none', border: 'none', cursor: 'pointer' }}>{item.label}</button>
-          ))}
-          <a href="https://twitter.com" target="_blank" rel="noreferrer" style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', textDecoration: 'none' }}>Twitter / X</a>
-          <a href="https://discord.com" target="_blank" rel="noreferrer" style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.2em', textDecoration: 'none' }}>Discord</a>
-        </div>
-      </footer>
-
-      {/* MODALS */}
-      {activeModal && (
-        <div onClick={() => setActiveModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '24px', padding: '48px', maxWidth: '42rem', width: '100%', maxHeight: '80vh', overflowY: 'auto', position: 'relative' }}>
-            <button onClick={() => setActiveModal(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
-            {activeModal === 'terms' ? (
-              <>
-                <h2 style={{ fontSize: '30px', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>Terms of Battle</h2>
-                {['Fair Play: Competitors must use the integrated AI models provided by the platform. Any external automation or code injection will result in immediate disqualification and forfeiture of stakes.','Stakes & Payouts: All matches require a $12.50 entry fee. Payouts ($20) are processed via Solana within 10 minutes of match conclusion.','Judging: All decisions made by the Gemini AI Judge are final. No appeals will be considered unless a technical system failure occurs.','Age Requirement: You must be 18+ to participate in real-money battles.'].map((term, i) => (
-                  <p key={i} style={{ color: '#475569', lineHeight: 1.6, fontWeight: 500, marginBottom: '16px' }}><strong style={{ color: '#0f172a' }}>{i+1}. {term.split(':')[0]}:</strong>{term.split(':').slice(1).join(':')}</p>
-                ))}
-              </>
+            ) : view === 'preview' ? (
+              <iframe
+                srcDoc={currentCode}
+                style={styles.iframe}
+                sandbox="allow-scripts"
+                title="preview"
+              />
             ) : (
-              <>
-                <h2 style={{ fontSize: '30px', fontWeight: 800, marginBottom: '24px', color: '#0f172a' }}>Privacy Policy</h2>
-                {['Data Collection: We collect only essential information: your email for access and your wallet address for payouts.','Code Ownership: Code generated during battles remains private to the participants and is used only by the AI judge for evaluation.','Security: We do not store your private keys. All transactions are handled through secure web3 providers.','Third Parties: Your email will never be sold. It is used exclusively for platform notifications.'].map((item, i) => (
-                  <p key={i} style={{ color: '#475569', lineHeight: 1.6, fontWeight: 500, marginBottom: '16px' }}><strong style={{ color: '#0f172a' }}>{i+1}. {item.split(':')[0]}:</strong>{item.split(':').slice(1).join(':')}</p>
-                ))}
-              </>
+              <pre style={styles.codeView}>{currentCode}</pre>
             )}
           </div>
         </div>
-      )}
-    </>
+      </div>
+
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+      `}</style>
+    </div>
   )
+}
+
+export default function BattlePage() {
+  return (
+    <Suspense fallback={<div style={{ background: '#f8fafc', minHeight: '100vh' }} />}>
+      <BattleContent />
+    </Suspense>
+  )
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  container: { height: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'hidden' },
+  topBar: {
+    height: '48px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '0 1.5rem', flexShrink: 0,
+  },
+  topLeft: { display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 },
+  topRight: { flex: 1, display: 'flex', justifyContent: 'flex-end' },
+  timer: { fontSize: '20px', fontWeight: '800', fontVariantNumeric: 'tabular-nums', flexShrink: 0 },
+  lockBanner: {
+    background: '#1a0a0a', borderBottom: '1px solid #3a1a1a',
+    color: '#ff4d4d', fontSize: '13px', textAlign: 'center', padding: '8px',
+  },
+  main: { display: 'flex', flex: 1, overflow: 'hidden' },
+  chatPanel: {
+    width: '50%', borderRight: '1px solid #f1f5f9',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+  },
+  chatMessages: {
+    flex: 1, overflowY: 'auto', padding: '1rem',
+    display: 'flex', flexDirection: 'column', gap: '10px',
+  },
+  emptyChat: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' },
+  message: { maxWidth: '85%', borderRadius: '10px', padding: '10px 14px' },
+  chatStats: {
+    display: 'flex', gap: '1rem', padding: '6px 1rem',
+    borderTop: '1px solid #f1f5f9', background: '#f8fafc',
+  },
+  inputWrap: {
+    padding: '1rem', borderTop: '1px solid #f1f5f9',
+    display: 'flex', gap: '8px', alignItems: 'flex-end',
+  },
+  input: {
+    flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0',
+    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',
+    fontSize: '13px', outline: 'none', resize: 'none', fontFamily: 'sans-serif',
+  },
+  sendBtn: {
+    width: '40px', height: '40px', background: '#00bfff', color: '#000',
+    border: 'none', borderRadius: '8px', fontSize: '18px', fontWeight: '700',
+    cursor: 'pointer', flexShrink: 0,
+  },
+  rightPanel: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  toggleBar: {
+    display: 'flex', gap: '4px', padding: '8px',
+    borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
+  },
+  toggleBtn: {
+    padding: '4px 16px', borderRadius: '6px', border: 'none',
+    fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+  },
+  rightContent: { flex: 1, overflow: 'hidden', position: 'relative' },
+  emptyPreview: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  iframe: { width: '100%', height: '100%', border: 'none', background: '#fff' },
+  codeView: {
+    margin: 0, padding: '1rem', color: '#64748b', fontSize: '12px',
+    fontFamily: 'monospace', overflowY: 'auto', height: '100%',
+    background: '#f8fafc', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+  },
 }
