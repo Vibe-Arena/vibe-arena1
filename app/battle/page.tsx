@@ -1,20 +1,21 @@
 'use client'
 
-import { useEffect, useRef, useState, Suspense } from 'react'
-import type { CSSProperties, KeyboardEvent } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  AlertTriangle,
   Bot,
-  Braces,
   CheckCircle2,
   Clock3,
   Code2,
+  Columns3,
   Eye,
   FileCode2,
   Gauge,
   Lock,
+  Maximize2,
   MessageSquareText,
+  Minimize2,
   Radio,
   Send,
   Sparkles,
@@ -31,7 +32,7 @@ type Message = {
   content: string
 }
 
-type ViewMode = 'code' | 'preview'
+type ViewMode = 'preview' | 'split' | 'code'
 
 type StreamResponse = {
   choices?: Array<{
@@ -43,6 +44,8 @@ type StreamResponse = {
 
 function BattleContent() {
   const currentCodeRef = useRef('')
+  const studioRef = useRef<HTMLElement>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const prompt = searchParams.get('prompt') || 'Build a beautiful todo app with priority levels'
@@ -58,8 +61,8 @@ function BattleContent() {
   const [locked, setLocked] = useState(false)
   const [promptCount, setPromptCount] = useState(0)
   const [tokenCount, setTokenCount] = useState(0)
-  const chatEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [studioFocus, setStudioFocus] = useState(false)
 
   useEffect(() => {
     if (locked) return
@@ -99,6 +102,18 @@ function BattleContent() {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [locked])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === studioRef.current)
+      if (document.fullscreenElement === studioRef.current) {
+        setStudioFocus(false)
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -203,247 +218,903 @@ function BattleContent() {
     }
   }
 
+  const toggleFullscreen = async () => {
+    if (!studioRef.current) return
+
+    if (studioFocus) {
+      setStudioFocus(false)
+      return
+    }
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+      return
+    }
+
+    try {
+      await studioRef.current.requestFullscreen()
+    } catch {
+      setStudioFocus(true)
+    }
+  }
+
   const minutesUsed = Math.max(0, Math.round((BATTLE_DURATION - timeLeft) / 60))
   const timeProgress = ((BATTLE_DURATION - timeLeft) / BATTLE_DURATION) * 100
-  const isDanger = timeLeft <= 30
-  const isWarning = timeLeft <= 120
-  const timerTone = isDanger ? '#ef4444' : isWarning ? '#f59e0b' : '#06b6d4'
+  const timerTone = timeLeft <= 30 ? 'danger' : timeLeft <= 120 ? 'warning' : 'live'
   const codeReady = currentCode.length > 0
+  const codeLines = currentCode.split('\n')
 
   return (
-    <div style={styles.container}>
+    <div className="battle-page">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
         * { box-sizing: border-box; }
-        @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.82); } }
-        @keyframes driftIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes timerPulse { 0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); } 50% { box-shadow: 0 0 28px rgba(239, 68, 68, 0.24); } }
-        .arena-enter { animation: driftIn 0.38s ease both; }
-        .arena-button { transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease; }
-        .arena-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.04); box-shadow: 0 16px 34px rgba(0, 210, 255, 0.28); }
-        .arena-panel { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .arena-panel:hover { border-color: #cffafe; box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08); }
-        @media (max-width: 980px) {
-          .arena-shell { padding: 14px !important; }
-          .arena-main { grid-template-columns: 1fr !important; overflow: auto !important; }
-          .arena-top { height: auto !important; align-items: flex-start !important; flex-direction: column !important; }
-          .prompt-text { max-width: 100% !important; }
+
+        @keyframes pulseDot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.42; transform: scale(0.82); }
+        }
+
+        .battle-page {
+          --ink: #111827;
+          --muted: #6b7280;
+          --line: #e5e7eb;
+          --soft: #f5f7fb;
+          --panel: #ffffff;
+          --accent: #0ea5a4;
+          --accent-ink: #0f766e;
+          --hot: #ef4444;
+          --warn: #d97706;
+          min-height: 100vh;
+          height: 100vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          background:
+            radial-gradient(circle at top left, rgba(14, 165, 164, 0.14), transparent 30%),
+            linear-gradient(180deg, #fbfcff 0%, #eef2f7 100%);
+          color: var(--ink);
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .topbar {
+          min-height: 72px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto auto;
+          align-items: center;
+          gap: 16px;
+          padding: 12px 18px;
+          border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+          background: rgba(255, 255, 255, 0.82);
+          backdrop-filter: blur(18px);
+          flex-shrink: 0;
+        }
+
+        .brand {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          gap: 12px;
+        }
+
+        .mark {
+          width: 42px;
+          height: 42px;
+          display: grid;
+          place-items: center;
+          flex: 0 0 auto;
+          border-radius: 12px;
+          color: white;
+          background: #111827;
+          box-shadow: 0 12px 26px rgba(17, 24, 39, 0.18);
+        }
+
+        .live-label,
+        .eyebrow {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin: 0;
+          color: var(--accent-ink);
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0;
+        }
+
+        .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 999px;
+          background: #22c55e;
+          animation: pulseDot 1.35s ease infinite;
+        }
+
+        .prompt-line {
+          max-width: 760px;
+          margin: 4px 0 0;
+          overflow: hidden;
+          color: var(--ink);
+          font-size: 14px;
+          font-weight: 800;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .timer {
+          min-width: 200px;
+        }
+
+        .timer-readout {
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: white;
+          color: var(--accent-ink);
+          font: 800 22px/1 'JetBrains Mono', monospace;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .timer-readout.warning { color: var(--warn); }
+        .timer-readout.danger { color: var(--hot); }
+
+        .progress {
+          height: 4px;
+          margin-top: 7px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #e5e7eb;
+        }
+
+        .progress span {
+          display: block;
+          height: 100%;
+          border-radius: inherit;
+          background: var(--accent);
+          transition: width 0.28s ease;
+        }
+
+        .model-pill,
+        .status-pill,
+        .stat-pill {
+          min-width: 0;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid var(--line);
+          border-radius: 999px;
+          background: white;
+          color: #4b5563;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .model-pill {
+          max-width: 230px;
+          padding: 10px 13px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .lock-banner {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 9px 12px;
+          border-bottom: 1px solid #fecaca;
+          background: #fef2f2;
+          color: #dc2626;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .arena {
+          min-height: 0;
+          flex: 1;
+          display: grid;
+          grid-template-columns: minmax(330px, 0.78fr) minmax(0, 1.22fr);
+          gap: 14px;
+          padding: 14px;
+          overflow: hidden;
+        }
+
+        .console,
+        .studio {
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid var(--line);
+          border-radius: 14px;
+          background: var(--panel);
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.07);
+        }
+
+        .panel-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 14px;
+          padding: 16px 16px 12px;
+          border-bottom: 1px solid #f0f2f5;
+        }
+
+        .title {
+          margin: 4px 0 0;
+          color: var(--ink);
+          font-size: 20px;
+          line-height: 1.15;
+          font-weight: 800;
+        }
+
+        .stat-pill {
+          padding: 7px 10px;
+          color: var(--accent-ink);
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .brief {
+          margin: 14px 16px;
+          padding: 12px;
+          border: 1px solid #dcebea;
+          border-radius: 12px;
+          background: #f8fffe;
+        }
+
+        .brief span {
+          display: block;
+          margin-bottom: 7px;
+          color: var(--accent-ink);
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0;
+        }
+
+        .brief p {
+          margin: 0;
+          color: #1f2937;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1.5;
+        }
+
+        .messages {
+          min-height: 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          overflow-y: auto;
+          padding: 0 16px 14px;
+        }
+
+        .empty-chat,
+        .empty-preview {
+          min-height: 240px;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 28px;
+          color: var(--muted);
+        }
+
+        .empty-icon {
+          width: 50px;
+          height: 50px;
+          display: grid;
+          place-items: center;
+          margin-bottom: 14px;
+          border-radius: 14px;
+          background: #111827;
+          color: white;
+        }
+
+        .empty-chat h3,
+        .empty-preview h3 {
+          margin: 0 0 7px;
+          color: var(--ink);
+          font-size: 17px;
+          font-weight: 800;
+        }
+
+        .empty-chat p,
+        .empty-preview p {
+          max-width: 350px;
+          margin: 0;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.65;
+        }
+
+        .message {
+          max-width: 90%;
+          padding: 11px 12px;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: #f9fafb;
+        }
+
+        .message.user {
+          align-self: flex-end;
+          border-color: #bee3e1;
+          background: #f1fbfa;
+        }
+
+        .message.assistant {
+          align-self: flex-start;
+        }
+
+        .message-meta {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 6px;
+          color: #8a94a3;
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0;
+        }
+
+        .message p {
+          margin: 0;
+          color: #4b5563;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.62;
+          white-space: pre-wrap;
+        }
+
+        .message.user p { color: #0f766e; }
+
+        .cursor {
+          display: inline-block;
+          margin-left: 2px;
+          color: var(--accent);
+          font-weight: 800;
+          animation: pulseDot 1s ease infinite;
+        }
+
+        .console-stats {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+          padding: 10px 16px;
+          border-top: 1px solid #f0f2f5;
+          background: #fbfcfe;
+          color: #6b7280;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .console-stats span {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .composer {
+          display: flex;
+          align-items: flex-end;
+          gap: 10px;
+          padding: 14px 16px 16px;
+          border-top: 1px solid #f0f2f5;
+          background: white;
+        }
+
+        textarea {
+          width: 100%;
+          min-height: 84px;
+          max-height: 160px;
+          resize: vertical;
+          outline: none;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: #f8fafc;
+          color: var(--ink);
+          padding: 12px 13px;
+          font: 600 13px/1.55 'Plus Jakarta Sans', sans-serif;
+        }
+
+        textarea:focus {
+          border-color: #99d6d3;
+          box-shadow: 0 0 0 3px rgba(14, 165, 164, 0.12);
+        }
+
+        button {
+          font-family: inherit;
+        }
+
+        .icon-button,
+        .send-button,
+        .mode-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          cursor: pointer;
+          transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+        }
+
+        .icon-button:hover,
+        .send-button:hover:not(:disabled),
+        .mode-button:hover {
+          transform: translateY(-1px);
+        }
+
+        .send-button {
+          width: 48px;
+          height: 48px;
+          flex: 0 0 auto;
+          border-radius: 12px;
+          background: #111827;
+          color: white;
+        }
+
+        .send-button:disabled {
+          cursor: not-allowed;
+          opacity: 0.45;
+        }
+
+        .studio {
+          position: relative;
+        }
+
+        .studio:fullscreen,
+        .studio.focus-mode {
+          width: 100vw;
+          height: 100vh;
+          border: 0;
+          border-radius: 0;
+          background: white;
+        }
+
+        .studio.focus-mode {
+          position: fixed;
+          inset: 0;
+          z-index: 80;
+        }
+
+        .studio-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 9px;
+          flex-wrap: wrap;
+        }
+
+        .status-pill {
+          padding: 8px 10px;
+        }
+
+        .status-pill.ready {
+          border-color: #bbf7d0;
+          background: #f0fdf4;
+          color: #15803d;
+        }
+
+        .mode-switch {
+          display: flex;
+          gap: 4px;
+          padding: 4px;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: #f8fafc;
+        }
+
+        .mode-button {
+          min-width: 38px;
+          height: 34px;
+          gap: 7px;
+          padding: 0 10px;
+          border-radius: 9px;
+          background: transparent;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .mode-button.active {
+          background: #111827;
+          color: white;
+        }
+
+        .icon-button {
+          width: 42px;
+          height: 42px;
+          flex: 0 0 auto;
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          background: white;
+          color: #374151;
+        }
+
+        .studio-meta {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px;
+          padding: 10px 16px;
+          border-bottom: 1px solid #f0f2f5;
+          background: #fbfcfe;
+        }
+
+        .metric {
+          min-width: 0;
+          padding: 9px 10px;
+          border: 1px solid #eef1f4;
+          border-radius: 10px;
+          background: white;
+        }
+
+        .metric span {
+          display: block;
+          margin-bottom: 4px;
+          color: #8a94a3;
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0;
+        }
+
+        .metric strong {
+          display: block;
+          overflow: hidden;
+          color: var(--ink);
+          font-size: 13px;
+          font-weight: 800;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .workspace {
+          min-height: 0;
+          flex: 1;
+          position: relative;
+          overflow: hidden;
+          background: #eef2f7;
+        }
+
+        .workspace.split {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 1px;
+          background: #d8dee8;
+        }
+
+        .preview-frame,
+        .code-frame {
+          min-width: 0;
+          min-height: 0;
+          height: 100%;
+          background: white;
+        }
+
+        iframe {
+          width: 100%;
+          height: 100%;
+          border: 0;
+          background: white;
+        }
+
+        .code-frame {
+          overflow: auto;
+          background: #0b1220;
+          color: #dbeafe;
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        .code-row {
+          display: grid;
+          grid-template-columns: 54px minmax(0, 1fr);
+          min-height: 22px;
+          font-size: 12px;
+          line-height: 1.7;
+        }
+
+        .code-row:first-child { padding-top: 14px; }
+        .code-row:last-child { padding-bottom: 18px; }
+
+        .line-number {
+          padding-right: 14px;
+          color: #64748b;
+          text-align: right;
+          user-select: none;
+        }
+
+        .line-code {
+          min-width: max-content;
+          padding-right: 22px;
+          white-space: pre;
+        }
+
+        .empty-preview {
+          background:
+            linear-gradient(#ffffff, #ffffff) padding-box,
+            repeating-linear-gradient(90deg, rgba(17,24,39,0.06) 0 1px, transparent 1px 34px),
+            repeating-linear-gradient(0deg, rgba(17,24,39,0.06) 0 1px, transparent 1px 34px);
+        }
+
+        @media (max-width: 1050px) {
+          .battle-page {
+            height: auto;
+            min-height: 100vh;
+            overflow: auto;
+          }
+
+          .topbar,
+          .arena,
+          .workspace.split {
+            grid-template-columns: 1fr;
+          }
+
+          .topbar {
+            align-items: stretch;
+          }
+
+          .timer,
+          .model-pill {
+            width: 100%;
+            max-width: none;
+          }
+
+          .arena {
+            overflow: visible;
+          }
+
+          .console,
+          .studio {
+            min-height: 640px;
+          }
+
+          .prompt-line {
+            white-space: normal;
+          }
+        }
+
+        @media (max-width: 680px) {
+          .arena {
+            padding: 10px;
+          }
+
+          .panel-head,
+          .studio-actions,
+          .composer {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .studio-meta {
+            grid-template-columns: 1fr;
+          }
+
+          .mode-switch {
+            width: 100%;
+          }
+
+          .mode-button {
+            flex: 1;
+          }
+
+          .icon-button {
+            width: 100%;
+          }
         }
       `}</style>
 
-      <header className="arena-top" style={styles.topBar}>
-        <div style={styles.topLeft}>
-          <div style={styles.brandMark}>
+      <header className="topbar">
+        <div className="brand">
+          <div className="mark">
             <Swords size={20} />
           </div>
           <div>
-            <div style={styles.brandLine}>
-              <span style={styles.liveDot} />
-              Live battle
-            </div>
-            <p className="prompt-text" style={styles.promptText}>{prompt}</p>
+            <p className="live-label"><span className="dot" /> Live battle</p>
+            <p className="prompt-line">{prompt}</p>
           </div>
         </div>
 
-        <div style={styles.timerCluster}>
-          <div style={{
-            ...styles.timerCard,
-            color: timerTone,
-            borderColor: isDanger ? '#fecaca' : isWarning ? '#fed7aa' : '#cffafe',
-            animation: isDanger ? 'timerPulse 1s ease infinite' : 'none',
-          }}>
+        <div className="timer">
+          <div className={`timer-readout ${timerTone}`}>
             <Clock3 size={18} />
             <span>{locked ? 'LOCKED' : formatTime(timeLeft)}</span>
           </div>
-          <div style={styles.progressTrack}>
-            <div style={{ ...styles.progressFill, width: `${timeProgress}%`, background: timerTone }} />
+          <div className="progress">
+            <span style={{ width: `${timeProgress}%` }} />
           </div>
         </div>
 
-        <div style={styles.modelPill}>
+        <div className="model-pill" title={modelName}>
           <Bot size={16} />
           <span>{modelName}</span>
         </div>
       </header>
 
       {locked && (
-        <div style={styles.lockBanner}>
+        <div className="lock-banner">
           <Lock size={16} />
           Time is up. Your last generated build has been submitted.
         </div>
       )}
 
-      <main className="arena-shell" style={styles.shell}>
-        <section className="arena-main" style={styles.main}>
-          <aside className="arena-panel arena-enter" style={styles.leftPanel}>
-            <div style={styles.panelHeader}>
-              <div>
-                <p style={styles.kicker}>Prompt Console</p>
-                <h2 style={styles.panelTitle}>Build commands</h2>
-              </div>
-              <div style={styles.statBadge}>
-                <MessageSquareText size={15} />
-                {promptCount}
-              </div>
+      <main className="arena">
+        <aside className="console">
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">Prompt console</p>
+              <h2 className="title">Build commands</h2>
             </div>
-
-            <div style={styles.promptCard}>
-              <span style={styles.promptBadge}>Match prompt</span>
-              <p style={styles.promptBody}>{prompt}</p>
+            <div className="stat-pill">
+              <MessageSquareText size={15} />
+              {promptCount}
             </div>
+          </div>
 
-            <div style={styles.chatMessages}>
-              {messages.length === 0 && (
-                <div style={styles.emptyChat}>
-                  <div style={styles.emptyIcon}><Sparkles size={24} /></div>
-                  <h3 style={styles.emptyTitle}>Start the sprint</h3>
-                  <p style={styles.emptyText}>
-                    Describe the first version you want. Keep it specific: layout, theme, interactions, and scoring details.
-                  </p>
+          <div className="brief">
+            <span>Match prompt</span>
+            <p>{prompt}</p>
+          </div>
+
+          <div className="messages">
+            {messages.length === 0 && (
+              <div className="empty-chat">
+                <div className="empty-icon"><Sparkles size={23} /></div>
+                <h3>Start the sprint</h3>
+                <p>Ask for the first version, then iterate hard. The latest complete HTML build is what gets submitted.</p>
+              </div>
+            )}
+
+            {messages.map((message, index) => (
+              <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
+                <div className="message-meta">
+                  {message.role === 'user' ? <Zap size={12} /> : <Bot size={12} />}
+                  {message.role === 'user' ? 'You' : 'Model'}
                 </div>
-              )}
+                <p>
+                  {message.content}
+                  {isStreaming && index === messages.length - 1 && message.role === 'assistant' && (
+                    <span className="cursor">|</span>
+                  )}
+                </p>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
 
-              {messages.map((message, index) => (
-                <div
-                  key={`${message.role}-${index}`}
-                  style={{
-                    ...styles.message,
-                    alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
-                    background: message.role === 'user' ? '#ecfeff' : '#f8fafc',
-                    borderColor: message.role === 'user' ? '#bae6fd' : '#e2e8f0',
-                  }}
+          <div className="console-stats">
+            <span><MessageSquareText size={13} /> Prompts {promptCount}</span>
+            <span><Gauge size={13} /> Tokens {tokenCount.toLocaleString()}</span>
+            <span><Timer size={13} /> {minutesUsed}m used</span>
+          </div>
+
+          <div className="composer">
+            <textarea
+              placeholder={locked ? 'Battle locked' : 'Describe what to build or change...'}
+              value={input}
+              onChange={event => setInput(event.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={locked || isStreaming}
+              rows={4}
+            />
+            <button
+              className="send-button"
+              onClick={sendMessage}
+              disabled={!input.trim() || isStreaming || locked}
+              aria-label="Send build prompt"
+              title="Send"
+            >
+              {isStreaming ? <Radio size={20} /> : <Send size={20} />}
+            </button>
+          </div>
+        </aside>
+
+        <section className={`studio ${studioFocus ? 'focus-mode' : ''}`} ref={studioRef}>
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">Submission studio</p>
+              <h2 className="title">Live build</h2>
+            </div>
+
+            <div className="studio-actions">
+              <span className={`status-pill ${codeReady ? 'ready' : ''}`}>
+                {codeReady ? <CheckCircle2 size={14} /> : <FileCode2 size={14} />}
+                {codeReady ? 'Build ready' : 'Awaiting code'}
+              </span>
+
+              <div className="mode-switch" aria-label="View mode">
+                <button
+                  className={`mode-button ${view === 'preview' ? 'active' : ''}`}
+                  onClick={() => setView('preview')}
+                  title="Preview"
                 >
-                  <div style={styles.messageMeta}>
-                    {message.role === 'user' ? <Zap size={12} /> : <Bot size={12} />}
-                    {message.role === 'user' ? 'You' : 'Model'}
-                  </div>
-                  <p style={{
-                    ...styles.messageText,
-                    color: message.role === 'user' ? '#155e75' : '#475569',
-                  }}>
-                    {message.content}
-                    {isStreaming && index === messages.length - 1 && message.role === 'assistant' && (
-                      <span style={styles.cursor}>|</span>
-                    )}
-                  </p>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
+                  <Eye size={15} />
+                  Preview
+                </button>
+                <button
+                  className={`mode-button ${view === 'split' ? 'active' : ''}`}
+                  onClick={() => setView('split')}
+                  title="Split"
+                >
+                  <Columns3 size={15} />
+                  Split
+                </button>
+                <button
+                  className={`mode-button ${view === 'code' ? 'active' : ''}`}
+                  onClick={() => setView('code')}
+                  title="Code"
+                >
+                  <Code2 size={15} />
+                  Code
+                </button>
+              </div>
 
-            <div style={styles.chatStats}>
-              <span><Braces size={13} /> Prompts: {promptCount}</span>
-              <span><Gauge size={13} /> Tokens: {tokenCount.toLocaleString()}</span>
-              <span><Timer size={13} /> {minutesUsed}m used</span>
-              {tokenCount > 90000 && <span style={styles.warningText}><AlertTriangle size={13} /> Token limit close</span>}
-            </div>
-
-            <div style={styles.inputWrap}>
-              <textarea
-                ref={inputRef}
-                style={styles.input}
-                placeholder={locked ? 'Battle locked' : 'Describe what to build or change...'}
-                value={input}
-                onChange={event => setInput(event.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={locked || isStreaming}
-                rows={4}
-              />
               <button
-                className="arena-button"
-                onClick={sendMessage}
-                disabled={!input.trim() || isStreaming || locked}
-                style={{
-                  ...styles.sendBtn,
-                  opacity: !input.trim() || isStreaming || locked ? 0.45 : 1,
-                  cursor: !input.trim() || isStreaming || locked ? 'not-allowed' : 'pointer',
-                }}
-                aria-label="Send build prompt"
+                className="icon-button"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen || studioFocus ? 'Exit fullscreen' : 'Enter fullscreen'}
+                title={isFullscreen || studioFocus ? 'Exit fullscreen' : 'Fullscreen studio'}
               >
-                {isStreaming ? <Radio size={20} /> : <Send size={20} />}
+                {isFullscreen || studioFocus ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
               </button>
             </div>
-          </aside>
+          </div>
 
-          <section className="arena-panel arena-enter" style={styles.rightPanel}>
-            <div style={styles.previewHeader}>
-              <div>
-                <p style={styles.kicker}>Submission Studio</p>
-                <h2 style={styles.panelTitle}>Live build</h2>
-              </div>
+          <div className="studio-meta">
+            <div className="metric">
+              <span>Mode</span>
+              <strong>{view === 'preview' ? 'Preview' : view === 'split' ? 'Split view' : 'Source'}</strong>
+            </div>
+            <div className="metric">
+              <span>Code size</span>
+              <strong>{currentCode.length.toLocaleString()} chars</strong>
+            </div>
+            <div className="metric">
+              <span>Submit rule</span>
+              <strong>Latest build</strong>
+            </div>
+          </div>
 
-              <div style={styles.headerActions}>
-                <span style={{
-                  ...styles.readyPill,
-                  color: codeReady ? '#16a34a' : '#94a3b8',
-                  background: codeReady ? '#dcfce7' : '#f8fafc',
-                  borderColor: codeReady ? '#bbf7d0' : '#e2e8f0',
-                }}>
-                  {codeReady ? <CheckCircle2 size={14} /> : <FileCode2 size={14} />}
-                  {codeReady ? 'Build ready' : 'Awaiting code'}
-                </span>
-
-                <div style={styles.toggleBar}>
-                  <button
-                    style={{
-                      ...styles.toggleBtn,
-                      background: view === 'preview' ? '#0f172a' : 'transparent',
-                      color: view === 'preview' ? '#ffffff' : '#64748b',
-                    }}
-                    onClick={() => setView('preview')}
-                  >
-                    <Eye size={15} /> Preview
-                  </button>
-                  <button
-                    style={{
-                      ...styles.toggleBtn,
-                      background: view === 'code' ? '#0f172a' : 'transparent',
-                      color: view === 'code' ? '#ffffff' : '#64748b',
-                    }}
-                    onClick={() => setView('code')}
-                  >
-                    <Code2 size={15} /> Code
-                  </button>
-                </div>
+          {currentCode === '' ? (
+            <div className="workspace">
+              <div className="empty-preview">
+                <div className="empty-icon"><Trophy size={25} /></div>
+                <h3>Your build will appear here</h3>
+                <p>Once the model returns a full HTML app, this studio turns into your preview, code view, or both at once.</p>
               </div>
             </div>
-
-            <div style={styles.workspaceMeta}>
-              <div style={styles.metricCard}>
-                <span style={styles.metricLabel}>Mode</span>
-                <strong>{view === 'preview' ? 'Visual QA' : 'Source audit'}</strong>
-              </div>
-              <div style={styles.metricCard}>
-                <span style={styles.metricLabel}>Chars</span>
-                <strong>{currentCode.length.toLocaleString()}</strong>
-              </div>
-              <div style={styles.metricCard}>
-                <span style={styles.metricLabel}>Submit rule</span>
-                <strong>Last build</strong>
-              </div>
-            </div>
-
-            <div style={styles.workspace}>
-              {currentCode === '' ? (
-                <div style={styles.emptyPreview}>
-                  <div style={styles.emptyPreviewFrame}>
-                    <Trophy size={30} />
-                    <h3>Your build will appear here</h3>
-                    <p>Send a prompt on the left. The generated single-file app will render instantly in this studio.</p>
-                  </div>
+          ) : (
+            <div className={`workspace ${view === 'split' ? 'split' : ''}`}>
+              {(view === 'preview' || view === 'split') && (
+                <div className="preview-frame">
+                  <iframe
+                    srcDoc={currentCode}
+                    sandbox="allow-scripts"
+                    title="Vibe Arena build preview"
+                  />
                 </div>
-              ) : view === 'preview' ? (
-                <iframe
-                  srcDoc={currentCode}
-                  style={styles.iframe}
-                  sandbox="allow-scripts"
-                  title="Vibe Arena build preview"
-                />
-              ) : (
-                <pre style={styles.codeView}>{currentCode}</pre>
+              )}
+
+              {(view === 'code' || view === 'split') && (
+                <div className="code-frame" aria-label="Generated code">
+                  {codeLines.map((line, index) => (
+                    <div className="code-row" key={`${index}-${line.slice(0, 12)}`}>
+                      <span className="line-number">{index + 1}</span>
+                      <code className="line-code">{line || ' '}</code>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </section>
+          )}
         </section>
       </main>
     </div>
@@ -456,480 +1127,4 @@ export default function BattlePage() {
       <BattleContent />
     </Suspense>
   )
-}
-
-const styles: Record<string, CSSProperties> = {
-  container: {
-    height: '100vh',
-    background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 42%, #eef9ff 100%)',
-    color: '#0f172a',
-    display: 'flex',
-    flexDirection: 'column',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    overflow: 'hidden',
-  },
-  topBar: {
-    minHeight: '82px',
-    background: 'rgba(255, 255, 255, 0.88)',
-    backdropFilter: 'blur(20px)',
-    borderBottom: '1px solid rgba(226, 232, 240, 0.9)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '18px',
-    padding: '14px 22px',
-    flexShrink: 0,
-    zIndex: 20,
-  },
-  topLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    minWidth: 0,
-    flex: 1,
-  },
-  brandMark: {
-    width: '46px',
-    height: '46px',
-    borderRadius: '16px',
-    background: 'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)',
-    color: '#ffffff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 16px 32px rgba(0, 210, 255, 0.24)',
-    flexShrink: 0,
-  },
-  brandLine: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#0891b2',
-    fontSize: '11px',
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    letterSpacing: '0.14em',
-    marginBottom: '5px',
-  },
-  liveDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: '#22c55e',
-    animation: 'pulseDot 1.4s ease infinite',
-  },
-  promptText: {
-    color: '#0f172a',
-    fontSize: '14px',
-    fontWeight: 800,
-    margin: 0,
-    maxWidth: '560px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  timerCluster: {
-    width: '230px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    flexShrink: 0,
-  },
-  timerCard: {
-    height: '46px',
-    border: '1px solid #cffafe',
-    background: '#ffffff',
-    borderRadius: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    fontFamily: "'JetBrains Mono', monospace",
-    fontSize: '24px',
-    fontWeight: 900,
-    fontVariantNumeric: 'tabular-nums',
-    boxShadow: '0 14px 32px rgba(15, 23, 42, 0.05)',
-  },
-  progressTrack: {
-    height: '5px',
-    background: '#e2e8f0',
-    borderRadius: '999px',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: '999px',
-    transition: 'width 0.3s ease, background 0.3s ease',
-  },
-  modelPill: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: '9px',
-    color: '#475569',
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '999px',
-    padding: '11px 14px',
-    fontSize: '12px',
-    fontWeight: 900,
-    minWidth: '170px',
-    maxWidth: '240px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  lockBanner: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    background: '#fef2f2',
-    borderBottom: '1px solid #fecaca',
-    color: '#dc2626',
-    fontSize: '13px',
-    fontWeight: 800,
-    padding: '10px',
-    flexShrink: 0,
-  },
-  shell: {
-    flex: 1,
-    overflow: 'hidden',
-    padding: '18px',
-  },
-  main: {
-    height: '100%',
-    display: 'grid',
-    gridTemplateColumns: 'minmax(360px, 0.82fr) minmax(0, 1.18fr)',
-    gap: '18px',
-    overflow: 'hidden',
-  },
-  leftPanel: {
-    minHeight: 0,
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    boxShadow: '0 24px 70px rgba(15, 23, 42, 0.06)',
-  },
-  rightPanel: {
-    minHeight: 0,
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    boxShadow: '0 24px 70px rgba(15, 23, 42, 0.06)',
-  },
-  panelHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '16px',
-    padding: '22px 22px 14px',
-  },
-  kicker: {
-    color: '#06b6d4',
-    fontSize: '11px',
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    letterSpacing: '0.14em',
-    margin: 0,
-  },
-  panelTitle: {
-    color: '#0f172a',
-    fontSize: '22px',
-    fontWeight: 900,
-    letterSpacing: '-0.02em',
-    margin: '6px 0 0',
-  },
-  statBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#0891b2',
-    background: '#ecfeff',
-    border: '1px solid #cffafe',
-    borderRadius: '999px',
-    padding: '7px 10px',
-    fontSize: '12px',
-    fontWeight: 900,
-    fontFamily: "'JetBrains Mono', monospace",
-  },
-  promptCard: {
-    margin: '0 22px 14px',
-    padding: '14px',
-    background: 'linear-gradient(135deg, #f0fdff 0%, #ffffff 100%)',
-    border: '1px solid #cffafe',
-    borderRadius: '16px',
-  },
-  promptBadge: {
-    display: 'inline-flex',
-    color: '#0891b2',
-    background: '#ecfeff',
-    borderRadius: '999px',
-    padding: '5px 8px',
-    fontSize: '10px',
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    letterSpacing: '0.12em',
-    marginBottom: '8px',
-  },
-  promptBody: {
-    color: '#0f172a',
-    fontSize: '13px',
-    fontWeight: 800,
-    lineHeight: 1.55,
-    margin: 0,
-  },
-  chatMessages: {
-    flex: 1,
-    minHeight: 0,
-    overflowY: 'auto',
-    padding: '0 22px 18px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  emptyChat: {
-    flex: 1,
-    minHeight: '240px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    padding: '24px',
-    border: '1px dashed #cbd5e1',
-    borderRadius: '18px',
-    background: '#fbfdff',
-  },
-  emptyIcon: {
-    width: '52px',
-    height: '52px',
-    borderRadius: '18px',
-    background: 'linear-gradient(135deg, #00d2ff, #3a7bd5)',
-    color: '#ffffff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '14px',
-  },
-  emptyTitle: {
-    color: '#0f172a',
-    fontSize: '18px',
-    fontWeight: 900,
-    margin: '0 0 8px',
-  },
-  emptyText: {
-    color: '#64748b',
-    fontSize: '13px',
-    fontWeight: 600,
-    lineHeight: 1.65,
-    maxWidth: '330px',
-    margin: 0,
-  },
-  message: {
-    maxWidth: '88%',
-    border: '1px solid',
-    borderRadius: '16px',
-    padding: '12px 14px',
-  },
-  messageMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#94a3b8',
-    fontSize: '10px',
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    letterSpacing: '0.12em',
-    marginBottom: '7px',
-  },
-  messageText: {
-    fontSize: '13px',
-    fontWeight: 600,
-    lineHeight: 1.65,
-    whiteSpace: 'pre-wrap',
-    margin: 0,
-  },
-  cursor: {
-    display: 'inline-block',
-    color: '#06b6d4',
-    fontWeight: 900,
-    animation: 'pulseDot 1s ease infinite',
-    marginLeft: '2px',
-  },
-  chatStats: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-    padding: '10px 22px',
-    borderTop: '1px solid #f1f5f9',
-    background: '#fbfdff',
-    color: '#94a3b8',
-    fontSize: '11px',
-    fontWeight: 800,
-  },
-  warningText: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '5px',
-    color: '#f59e0b',
-  },
-  inputWrap: {
-    padding: '16px 18px 18px',
-    borderTop: '1px solid #f1f5f9',
-    display: 'flex',
-    gap: '10px',
-    alignItems: 'flex-end',
-    background: '#ffffff',
-  },
-  input: {
-    flex: 1,
-    minHeight: '82px',
-    maxHeight: '160px',
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    borderRadius: '16px',
-    padding: '13px 14px',
-    color: '#0f172a',
-    fontSize: '13px',
-    fontWeight: 600,
-    lineHeight: 1.55,
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-  },
-  sendBtn: {
-    width: '50px',
-    height: '50px',
-    background: 'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '16px',
-    fontWeight: 900,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  previewHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '16px',
-    padding: '22px 22px 14px',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  headerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-  },
-  readyPill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '7px',
-    border: '1px solid',
-    borderRadius: '999px',
-    padding: '8px 10px',
-    fontSize: '11px',
-    fontWeight: 900,
-  },
-  toggleBar: {
-    display: 'flex',
-    gap: '4px',
-    padding: '4px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '999px',
-    background: '#f8fafc',
-  },
-  toggleBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '7px',
-    padding: '8px 12px',
-    borderRadius: '999px',
-    border: 'none',
-    fontSize: '12px',
-    fontWeight: 900,
-    cursor: 'pointer',
-  },
-  workspaceMeta: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-    gap: '10px',
-    padding: '14px 22px',
-    background: '#fbfdff',
-    borderBottom: '1px solid #f1f5f9',
-  },
-  metricCard: {
-    background: '#ffffff',
-    border: '1px solid #f1f5f9',
-    borderRadius: '14px',
-    padding: '10px 12px',
-  },
-  metricLabel: {
-    display: 'block',
-    color: '#94a3b8',
-    fontSize: '10px',
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    letterSpacing: '0.12em',
-    marginBottom: '5px',
-  },
-  workspace: {
-    flex: 1,
-    minHeight: 0,
-    position: 'relative',
-    overflow: 'hidden',
-    background: '#f8fafc',
-  },
-  emptyPreview: {
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '28px',
-  },
-  emptyPreviewFrame: {
-    width: '100%',
-    maxWidth: '460px',
-    minHeight: '280px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    color: '#06b6d4',
-    background: '#ffffff',
-    border: '1px dashed #bae6fd',
-    borderRadius: '22px',
-    padding: '34px',
-  },
-  iframe: {
-    width: '100%',
-    height: '100%',
-    border: 'none',
-    background: '#ffffff',
-  },
-  codeView: {
-    margin: 0,
-    padding: '22px',
-    color: '#cbd5e1',
-    fontSize: '12px',
-    fontFamily: "'JetBrains Mono', monospace",
-    lineHeight: 1.7,
-    overflowY: 'auto',
-    height: '100%',
-    background: '#0f172a',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  },
 }

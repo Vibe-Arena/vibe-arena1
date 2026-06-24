@@ -8,311 +8,506 @@ type Tab = 'overview' | 'users' | 'matches' | 'flags'
 
 export default function AdminPage() {
   const router = useRouter()
+
   const [authorized, setAuthorized] = useState(false)
   const [tab, setTab] = useState<Tab>('overview')
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalMatches: 0,
-    activeMatches: 0,
-    totalFlags: 0,
+
+  const [stats,setStats] = useState({
+    totalUsers:0,
+    totalMatches:0,
+    activeMatches:0,
+    totalFlags:0
   })
-  const [users, setUsers] = useState<any[]>([])
-  const [matches, setMatches] = useState<any[]>([])
-  const [flags, setFlags] = useState<any[]>([])
-  const [userSearch, setUserSearch] = useState('')
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) { router.push('/login'); return }
+  const [users,setUsers] = useState<any[]>([])
+  const [matches,setMatches] = useState<any[]>([])
+  const [flags,setFlags] = useState<any[]>([])
+  const [search,setSearch] = useState('')
 
-      // Check admin
-      if (authUser.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+
+  useEffect(()=>{
+
+    async function init(){
+
+      const {data:{user}} = await supabase.auth.getUser()
+
+      if(!user){
+        router.push('/login')
+        return
+      }
+
+      if(user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL){
         router.push('/dashboard')
         return
       }
 
       setAuthorized(true)
-      await loadAll()
-      setLoading(false)
-    }
-    init()
-  }, [router])
 
-  const loadAll = async () => {
+      await loadAll()
+
+      setLoading(false)
+
+    }
+
+    init()
+
+  },[])
+
+
+
+  async function loadAll(){
+
     const [
-      { count: totalUsers },
-      { count: totalMatches },
-      { count: activeMatches },
-      { count: totalFlags },
-      { data: usersData },
-      { data: matchesData },
-      { data: flagsData },
+      usersCount,
+      matchesCount,
+      activeCount,
+      flagsCount,
+      usersData,
+      matchesData,
+      flagsData
+
     ] = await Promise.all([
-      supabase.from('users').select('*', { count: 'exact', head: true }),
-      supabase.from('matches').select('*', { count: 'exact', head: true }),
-      supabase.from('matches').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('flags').select('*', { count: 'exact', head: true }).eq('resolved', false),
-      supabase.from('users').select('*').order('created_at', { ascending: false }).limit(50),
-      supabase.from('matches').select('*').order('created_at', { ascending: false }).limit(50),
-      supabase.from('flags').select('*').eq('resolved', false).order('created_at', { ascending: false }),
+
+      supabase.from('users')
+      .select('*',{count:'exact',head:true}),
+
+      supabase.from('matches')
+      .select('*',{count:'exact',head:true}),
+
+      supabase.from('matches')
+      .select('*',{count:'exact',head:true})
+      .eq('status','active'),
+
+
+      supabase.from('flags')
+      .select('*',{count:'exact',head:true})
+      .eq('resolved',false),
+
+
+      supabase.from('users')
+      .select('*')
+      .order('created_at',{ascending:false})
+      .limit(100),
+
+
+      supabase.from('matches')
+      .select('*')
+      .order('created_at',{ascending:false})
+      .limit(100),
+
+
+      supabase.from('flags')
+      .select('*')
+      .eq('resolved',false)
+
     ])
 
+
     setStats({
-      totalUsers: totalUsers || 0,
-      totalMatches: totalMatches || 0,
-      activeMatches: activeMatches || 0,
-      totalFlags: totalFlags || 0,
+      totalUsers:usersCount.count || 0,
+      totalMatches:matchesCount.count || 0,
+      activeMatches:activeCount.count || 0,
+      totalFlags:flagsCount.count || 0
     })
-    setUsers(usersData || [])
-    setMatches(matchesData || [])
-    setFlags(flagsData || [])
+
+
+    setUsers(usersData.data || [])
+    setMatches(matchesData.data || [])
+    setFlags(flagsData.data || [])
+
   }
 
-  const suspendUser = async (userId: string, suspended: boolean) => {
-    await supabase.from('users').update({ is_suspended: !suspended }).eq('id', userId)
-    await loadAll()
+
+
+  async function suspendUser(id:string,state:boolean){
+
+    await supabase
+    .from('users')
+    .update({
+      is_suspended:!state
+    })
+    .eq('id',id)
+
+    loadAll()
+
   }
 
-  const resolveFlag = async (flagId: string) => {
-    await supabase.from('flags').update({ resolved: true }).eq('id', flagId)
-    await loadAll()
+
+
+  async function resolveFlag(id:string){
+
+    await supabase
+    .from('flags')
+    .update({
+      resolved:true
+    })
+    .eq('id',id)
+
+    loadAll()
+
   }
 
-  const filteredUsers = users.filter(u =>
-    u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.email?.toLowerCase().includes(userSearch.toLowerCase())
+
+
+  const filteredUsers = users.filter(u=>
+    u.username?.toLowerCase()
+    .includes(search.toLowerCase()) ||
+    u.email?.toLowerCase()
+    .includes(search.toLowerCase())
   )
 
-  if (loading) return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <p style={{ color: '#94a3b8' }}>Loading...</p>
-    </div>
-  )
 
-  if (!authorized) return null
 
-  return (
-    <div style={styles.container}>
-      <nav style={styles.navbar}>
-        <span style={{ color: '#ff4d4d', fontWeight: '800', fontSize: '18px' }}>⚡ Admin</span>
-        <span style={{ color: '#cbd5e1', fontSize: '13px' }}>Vibe Arena Control Panel</span>
-        <button onClick={() => router.push('/dashboard')} style={styles.backBtn}>← Back to App</button>
-      </nav>
+  if(loading)
+    return <div className="center">Loading dashboard...</div>
 
-      <div style={styles.layout}>
 
-        {/* SIDEBAR */}
-        <div style={styles.sidebar}>
-          {([
-            { id: 'overview', label: '📊 Overview' },
-            { id: 'users', label: '👥 Users' },
-            { id: 'matches', label: '⚔️ Matches' },
-            { id: 'flags', label: `🚩 Flags ${stats.totalFlags > 0 ? `(${stats.totalFlags})` : ''}` },
-          ] as const).map(t => (
-            <div
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={{
-                ...styles.sideItem,
-                background: tab === t.id ? '#f1f5f9' : 'transparent',
-                color: tab === t.id ? '#fff' : '#555',
-              }}
-            >
-              {t.label}
-            </div>
-          ))}
-        </div>
+  if(!authorized)
+    return null
 
-        {/* CONTENT */}
-        <div style={styles.content}>
 
-          {/* OVERVIEW */}
-          {tab === 'overview' && (
-            <>
-              <h2 style={styles.pageTitle}>Overview</h2>
-              <div style={styles.statsGrid}>
-                {[
-                  { label: 'Total Users', value: stats.totalUsers, color: '#00bfff' },
-                  { label: 'Total Matches', value: stats.totalMatches, color: '#7B61FF' },
-                  { label: 'Active Matches', value: stats.activeMatches, color: '#f5a623' },
-                  { label: 'Unresolved Flags', value: stats.totalFlags, color: '#ff4d4d' },
-                ].map(s => (
-                  <div key={s.label} style={styles.statCard}>
-                    <div style={{ color: s.color, fontSize: '36px', fontWeight: '800' }}>{s.value}</div>
-                    <div style={{ color: '#444', fontSize: '12px', marginTop: '4px' }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
 
-          {/* USERS */}
-          {tab === 'users' && (
-            <>
-              <h2 style={styles.pageTitle}>Users</h2>
-              <input
-                style={styles.search}
-                placeholder="Search by username or email..."
-                value={userSearch}
-                onChange={e => setUserSearch(e.target.value)}
-              />
-              <div style={styles.tableWrap}>
-                <div style={styles.tableHead}>
-                  <span style={{ flex: 1 }}>Username</span>
-                  <span style={{ flex: 1 }}>Email</span>
-                  <span style={{ width: '100px' }}>Joined</span>
-                  <span style={{ width: '120px' }}>Actions</span>
-                </div>
-                {filteredUsers.map(u => (
-                  <div key={u.id} style={styles.tableRow}>
-                    <span style={{ flex: 1, color: '#0f172a', fontSize: '13px' }}>{u.username}</span>
-                    <span style={{ flex: 1, color: '#94a3b8', fontSize: '13px' }}>{u.email}</span>
-                    <span style={{ width: '100px', color: '#cbd5e1', fontSize: '12px' }}>
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </span>
-                    <span style={{ width: '120px' }}>
-                      <button
-                        onClick={() => suspendUser(u.id, u.is_suspended)}
-                        style={{
-                          ...styles.actionBtn,
-                          color: u.is_suspended ? '#00bfff' : '#ff4d4d',
-                          borderColor: u.is_suspended ? '#00bfff40' : '#ff4d4d40',
-                        }}
-                      >
-                        {u.is_suspended ? 'Unsuspend' : 'Suspend'}
-                      </button>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+return (
 
-          {/* MATCHES */}
-          {tab === 'matches' && (
-            <>
-              <h2 style={styles.pageTitle}>Matches</h2>
-              <div style={styles.tableWrap}>
-                <div style={styles.tableHead}>
-                  <span style={{ width: '120px' }}>Status</span>
-                  <span style={{ flex: 1 }}>Prompt</span>
-                  <span style={{ width: '100px' }}>Date</span>
-                </div>
-                {matches.map(m => (
-                  <div key={m.id} style={styles.tableRow}>
-                    <span style={{ width: '120px' }}>
-                      <span style={{
-                        fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '4px',
-                        background: m.status === 'completed' ? '#001a0f' : m.status === 'active' ? '#1a1a00' : '#1a0a0a',
-                        color: m.status === 'completed' ? '#00bfff' : m.status === 'active' ? '#f5a623' : '#ff4d4d',
-                      }}>
-                        {m.status}
-                      </span>
-                    </span>
-                    <span style={{ flex: 1, color: '#94a3b8', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {m.prompt || '—'}
-                    </span>
-                    <span style={{ width: '100px', color: '#cbd5e1', fontSize: '12px' }}>
-                      {new Date(m.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-                {matches.length === 0 && (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: '#cbd5e1', fontSize: '13px' }}>
-                    No matches yet.
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+<div className="app">
 
-          {/* FLAGS */}
-          {tab === 'flags' && (
-            <>
-              <h2 style={styles.pageTitle}>Unresolved Flags</h2>
-              <div style={styles.tableWrap}>
-                <div style={styles.tableHead}>
-                  <span style={{ width: '120px' }}>Type</span>
-                  <span style={{ flex: 1 }}>Description</span>
-                  <span style={{ width: '100px' }}>Date</span>
-                  <span style={{ width: '100px' }}>Action</span>
-                </div>
-                {flags.map(f => (
-                  <div key={f.id} style={styles.tableRow}>
-                    <span style={{ width: '120px', color: '#ff4d4d', fontSize: '12px', fontWeight: '600' }}>{f.type}</span>
-                    <span style={{ flex: 1, color: '#94a3b8', fontSize: '13px' }}>{f.description || '—'}</span>
-                    <span style={{ width: '100px', color: '#cbd5e1', fontSize: '12px' }}>
-                      {new Date(f.created_at).toLocaleDateString()}
-                    </span>
-                    <span style={{ width: '100px' }}>
-                      <button onClick={() => resolveFlag(f.id)} style={{ ...styles.actionBtn, color: '#00bfff', borderColor: '#00bfff40' }}>
-                        Resolve
-                      </button>
-                    </span>
-                  </div>
-                ))}
-                {flags.length === 0 && (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: '#cbd5e1', fontSize: '13px' }}>
-                    No unresolved flags. All clear.
-                  </div>
-                )}
-              </div>
-            </>
-          )}
 
-        </div>
-      </div>
-    </div>
-  )
+<header>
+
+<div className="brand">
+⚡ Vibe Arena
+<span>Admin</span>
+</div>
+
+
+<button onClick={()=>router.push('/dashboard')}>
+Back
+</button>
+
+</header>
+
+
+
+<div className="layout">
+
+
+<aside>
+
+{
+[
+['overview','📊 Overview'],
+['users','👥 Users'],
+['matches','⚔️ Matches'],
+['flags',`🚩 Flags ${stats.totalFlags || ''}`]
+
+].map(([id,label])=>(
+
+<div
+
+className={
+tab===id?'active item':'item'
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: { minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' },
-  navbar: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 2rem', height: '60px', borderBottom: '1px solid #f1f5f9',
-    background: '#f8fafc',
-  },
-  backBtn: {
-    background: 'transparent', border: '1px solid #e2e8f0',
-    color: '#94a3b8', borderRadius: '8px', padding: '6px 14px',
-    fontSize: '13px', cursor: 'pointer',
-  },
-  layout: { display: 'flex', minHeight: 'calc(100vh - 60px)' },
-  sidebar: { width: '200px', borderRight: '1px solid #f1f5f9', padding: '1rem 0', flexShrink: 0 },
-  sideItem: {
-    padding: '10px 1.5rem', fontSize: '13px', cursor: 'pointer',
-    borderRadius: '6px', margin: '2px 8px', transition: 'all 0.15s',
-  },
-  content: { flex: 1, padding: '2rem', overflowY: 'auto' as const },
-  pageTitle: { color: '#0f172a', fontSize: '22px', fontWeight: '700', margin: '0 0 1.5rem' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' },
-  statCard: {
-    background: '#ffffff', border: '1px solid #f1f5f9',
-    borderRadius: '12px', padding: '1.5rem', textAlign: 'center',
-  },
-  search: {
-    width: '100%', background: '#ffffff', border: '1px solid #e2e8f0',
-    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',
-    fontSize: '13px', outline: 'none', marginBottom: '1rem',
-    boxSizing: 'border-box' as const,
-  },
-  tableWrap: { background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '12px', overflow: 'hidden' },
-  tableHead: {
-    display: 'flex', alignItems: 'center', padding: '10px 16px',
-    borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
-    color: '#444', fontSize: '11px', fontWeight: '500', textTransform: 'uppercase' as const,
-    letterSpacing: '0.08em',
-  },
-  tableRow: {
-    display: 'flex', alignItems: 'center', padding: '12px 16px',
-    borderBottom: '1px solid #f8fafc',
-  },
-  actionBtn: {
-    background: 'transparent', border: '1px solid',
-    borderRadius: '6px', padding: '4px 10px',
-    fontSize: '11px', fontWeight: '600', cursor: 'pointer',
-  },
+onClick={()=>setTab(id as Tab)}
+
+key={id}
+
+>
+
+{label}
+
+</div>
+
+))
+
+}
+
+</aside>
+
+
+
+
+<main>
+
+
+
+{
+tab==='overview' &&
+
+<>
+
+<h1>Dashboard</h1>
+
+
+<div className="cards">
+
+
+<Card
+title="Users"
+value={stats.totalUsers}
+/>
+
+
+<Card
+title="Matches"
+value={stats.totalMatches}
+/>
+
+
+<Card
+title="Live Matches"
+value={stats.activeMatches}
+/>
+
+
+<Card
+title="Reports"
+value={stats.totalFlags}
+/>
+
+
+</div>
+
+
+<div className="panel">
+
+<h2>System Status</h2>
+
+<p>
+Everything is running normally.
+</p>
+
+
+</div>
+
+
+</>
+
+}
+
+
+
+
+{
+tab==='users' &&
+
+<>
+
+<h1>Users</h1>
+
+
+<input
+
+placeholder="Search users..."
+
+value={search}
+
+onChange={e=>setSearch(e.target.value)}
+
+/>
+
+
+<Table>
+
+{
+filteredUsers.map(u=>(
+
+<div className="row" key={u.id}>
+
+
+<div>
+<strong>
+{u.username || 'Unknown'}
+</strong>
+
+<small>
+{u.email}
+</small>
+
+</div>
+
+
+<span>
+{new Date(u.created_at)
+.toLocaleDateString()}
+</span>
+
+
+
+<button
+
+className={
+u.is_suspended
+?'green'
+:'red'
+}
+
+onClick={()=>suspendUser(
+u.id,
+u.is_suspended
+)}
+
+>
+
+{
+u.is_suspended
+?'Restore'
+:'Suspend'
+}
+
+</button>
+
+
+
+</div>
+
+
+))
+
+}
+
+</Table>
+
+
+</>
+
+}
+
+
+
+
+
+{
+tab==='matches' &&
+
+<>
+
+<h1>Matches</h1>
+
+
+<Table>
+
+{
+matches.map(m=>(
+
+<div className="row" key={m.id}>
+
+
+<span className="badge">
+{m.status}
+</span>
+
+
+<p>
+{m.prompt || 'No prompt'}
+</p>
+
+
+<small>
+{new Date(m.created_at)
+.toLocaleDateString()}
+</small>
+
+
+</div>
+
+))
+
+}
+
+</Table>
+
+
+</>
+
+}
+
+
+
+
+
+{
+tab==='flags' &&
+
+<>
+
+<h1>Reports</h1>
+
+
+<Table>
+
+
+{
+flags.map(f=>(
+
+<div className="row" key={f.id}>
+
+
+<strong>
+{f.type}
+</strong>
+
+
+<p>
+{f.description}
+</p>
+
+
+<button
+onClick={()=>resolveFlag(f.id)}
+>
+Resolve
+</button>
+
+
+</div>
+
+))
+
+}
+
+
+</Table>
+
+
+</>
+
+}
+
+
+
+</main>
+
+</div>
+
+</div>
+
+)
+
+}
+
+
+
+function Card({title,value}:any){
+
+return (
+
+<div className="card">
+
+<p>{title}</p>
+
+<h2>{value}</h2>
+
+</div>
+
+)
+
+}
+
+
+function Table({children}:any){
+
+return <div className="table">{children}</div>
+
 }
