@@ -229,10 +229,12 @@ export default function QueuePage() {
       setUser(data)
     }
 
-    setWaitTime(0)
-    setStage('waiting')
-    waitInterval.current = setInterval(() => setWaitTime(time => time + 1), 1000)
-    watchForMatch(currentUser.id)
+    if (!currentUser) return
+
+setWaitTime(0)
+setStage('waiting')
+waitInterval.current = setInterval(() => setWaitTime(time => time + 1), 1000)
+watchForMatch(currentUser.id)
 
     try {
       const response = await fetch('/api/match', {
