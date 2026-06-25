@@ -1,8 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { AlertCircle, ArrowRight, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import styles from '../auth.module.css'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -11,13 +15,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleLogin = async () => {
+  const canSubmit = Boolean(email && password && !loading)
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!canSubmit) {
+      return
+    }
+
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-    if (error) {
+    if (signInError) {
       setError('Invalid email or password.')
       setLoading(false)
       return
@@ -27,90 +42,97 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleLogin()
-  }
-
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ color: '#00d2ff', fontSize: '28px', fontWeight: '800', margin: 0 }}>
-            Vibe Arena
-          </h1>
-          <p style={styles.subtitle}>Log in to your account</p>
+    <main className={styles.page}>
+      <section className={styles.storyPanel} aria-label="Vibe Arena">
+        <Link className={styles.logo} href="/">
+          <span>VA</span>
+          Vibe Arena
+        </Link>
+
+        <div className={styles.storyContent}>
+          <p className={styles.eyebrow}>Battle ready</p>
+          <h1>Jump back into the arena.</h1>
+          <p>
+            Track battles, climb the board, and keep your profile ready for the next
+            head-to-head challenge.
+          </p>
         </div>
 
-        <div style={styles.field}>
-          <label style={styles.label}>Email</label>
-          <input
-            style={styles.input}
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+        <div className={styles.featureGrid}>
+          <div>
+            <Sparkles size={18} />
+            <strong>Fast rounds</strong>
+            <span>Get matched and compete without friction.</span>
+          </div>
+          <div>
+            <ShieldCheck size={18} />
+            <strong>Protected account</strong>
+            <span>Your session is handled through Supabase auth.</span>
+          </div>
         </div>
+      </section>
 
-        <div style={styles.field}>
-          <label style={styles.label}>Password</label>
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="your password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+      <section className={styles.formPanel} aria-label="Log in">
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <span className={styles.iconBadge}>
+              <LockKeyhole size={20} />
+            </span>
+            <div>
+              <p className={styles.eyebrow}>Welcome back</p>
+              <h2>Log in to your account</h2>
+            </div>
+          </div>
+
+          <form className={styles.form} onSubmit={handleLogin}>
+            <label className={styles.field}>
+              <span>Email</span>
+              <div className={styles.inputWrap}>
+                <Mail size={18} />
+                <input
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder="you@example.com"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </div>
+            </label>
+
+            <label className={styles.field}>
+              <span>Password</span>
+              <div className={styles.inputWrap}>
+                <LockKeyhole size={18} />
+                <input
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </div>
+            </label>
+
+            {error ? (
+              <div className={styles.error} role="alert">
+                <AlertCircle size={17} />
+                {error}
+              </div>
+            ) : null}
+
+            <button className={styles.primaryButton} disabled={!canSubmit} type="submit">
+              {loading ? 'Logging in...' : 'Log in'}
+              <ArrowRight size={18} />
+            </button>
+          </form>
+
+          <p className={styles.switchText}>
+            No account yet? <Link href="/signup">Create one</Link>
+          </p>
         </div>
-
-        {error && <p style={styles.error}>{error}</p>}
-
-        <button
-          onClick={handleLogin}
-          disabled={!email || !password || loading}
-          style={{
-            ...styles.button,
-            opacity: email && password && !loading ? 1 : 0.4,
-            cursor: email && password && !loading ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {loading ? 'Logging in...' : 'Log In'}
-        </button>
-
-        <p style={{ color: '#000000', fontSize: '13px', textAlign: 'center', marginTop: '1.5rem' }}>
-          No account?{' '}
-          <a href="/signup" style={{ color: '#00d2ff' }}>Sign up</a>
-        </p>
-      </div>
-    </div>
+      </section>
+    </main>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh', background: '#f9f9f9',                // Light background
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '2rem', fontFamily: 'sans-serif',
-  },
-  card: {
-    background: '#f8fafc', border: '1px solid #787878',        // Matches sign-up border & card background
-    borderRadius: '16px', padding: '2.5rem',
-    width: '100%', maxWidth: '420px',
-  },
-  subtitle: { color: '#64748b', fontSize: '14px', margin: '0.5rem 0 0' },
-  field: { marginBottom: '1.25rem' },
-  label: { display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '6px' },
-  input: {
-    width: '100%', background: '#ffffff', border: '1px solid #cbd5e1', // White background, soft gray border
-    borderRadius: '8px', padding: '10px 14px', color: '#0f172a',        // Dark text for readability
-    fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const,
-  },
-  button: {
-    width: '100%', background: '#00d2ff', color: '#000',               // Sky blue background
-    border: 'none', borderRadius: '8px', padding: '12px',
-    fontSize: '15px', fontWeight: '700',
-  },
-  error: { color: '#ff4d4d', fontSize: '13px', marginBottom: '1rem' },
 }
