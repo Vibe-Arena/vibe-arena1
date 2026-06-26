@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -46,9 +47,14 @@ export default function LoginPage() {
     <main className={styles.page}>
       <section className={styles.storyPanel} aria-label="Vibe Arena">
         <Link className={styles.logo} href="/">
-          <span>VA</span>
-          Vibe Arena
-        </Link>
+  <Image
+    src="/logo.png"
+    alt="Vibe Arena"
+    width={42}
+    height={42}
+  />
+  <span className={styles.logoText}></span>
+</Link>
 
         <div className={styles.storyContent}>
           <p className={styles.eyebrow}>Battle ready</p>

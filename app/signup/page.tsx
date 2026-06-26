@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
@@ -99,11 +100,16 @@ export default function SignUpPage() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.storyPanel} aria-label="Vibe Arena">
+      <section className={styles.storyPanel} aria-label="">
         <Link className={styles.logo} href="/">
-          <span>VA</span>
-          Vibe Arena
-        </Link>
+  <Image
+    src="/logo.png"
+    alt="Vibe Arena"
+    width={48}
+    height={48}
+  />
+  <span></span>
+</Link>
 
         <div className={styles.storyContent}>
           <p className={styles.eyebrow}>Create your fighter card</p>
@@ -116,8 +122,13 @@ export default function SignUpPage() {
 
         <div className={styles.profilePreview}>
           <span className={styles.previewAvatar}>
-            {usernamePreview.slice(0, 2).toUpperCase()}
-          </span>
+  <Image
+    src="/logo.png"
+    alt="Avatar"
+    width={32}
+    height={32}
+  />
+</span>
           <div>
             <strong>@{usernamePreview}</strong>
             <p>New challenger profile</p>
@@ -130,8 +141,13 @@ export default function SignUpPage() {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.iconBadge}>
-              <UserRound size={20} />
-            </span>
+  <Image
+    src="/logo.png"
+    alt="Vibe Arena"
+    width={28}
+    height={28}
+  />
+</span>
             <div>
               <p className={styles.eyebrow}>Join Vibe Arena</p>
               <h2>Create your account</h2>

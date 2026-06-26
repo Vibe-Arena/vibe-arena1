@@ -126,10 +126,20 @@ export default function Dashboard() {
       `}</style>
 
       <nav style={styles.navbar}>
-        <button style={styles.brand} onClick={() => router.push('/dashboard')} aria-label="Vibe Arena dashboard">
-          <Image src="/Logo.png" alt="Vibe Arena" width={42} height={42} style={styles.logo} priority />
-          <span style={styles.brandText}>VIBE<span style={styles.brandAccent}>ARENA</span></span>
-        </button>
+        <button 
+  style={styles.brand} 
+  onClick={() => router.push('/dashboard')} 
+  aria-label="Vibe Arena dashboard"
+>
+  <Image 
+  src="/Logo234.png" 
+  alt="Vibe Arena" 
+  width={70} 
+  height={70} 
+  style={styles.logo} 
+  priority 
+/>
+</button>
 
         <div className="nav-links" style={styles.navLinks}>
           <a href="/dashboard" style={{ ...styles.navLink, color: '#0f172a' }}>Dashboard</a>
@@ -362,8 +372,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 0,
   },
   logo: {
-    width: '42px',
-    height: '42px',
+    width: '70px',
+    height: '70px',
     objectFit: 'contain',
   },
   brandText: {

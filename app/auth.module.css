@@ -51,21 +51,25 @@
   z-index: 1;
 }
 
-.logo span,
+.logo img {
+  width: 100px;
+  height: 200px;
+  object-fit: contain;
+}
+
+.logoText {
+  color: #101828;
+  font-size: 50px;
+  font-weight: 900;
+}
+
 .iconBadge,
 .previewAvatar {
   display: grid;
   place-items: center;
   border-radius: 8px;
-  color: #ffffff;
   background: linear-gradient(135deg, #111827, #2563eb);
   box-shadow: 0 14px 30px rgba(37, 99, 235, 0.22);
-}
-
-.logo span {
-  width: 42px;
-  height: 42px;
-  font-size: 13px;
 }
 
 .storyContent {
@@ -164,7 +168,17 @@
 .previewAvatar {
   width: 52px;
   height: 52px;
-  font-weight: 900;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.previewAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .formPanel {
@@ -190,6 +204,14 @@
   width: 46px;
   height: 46px;
   flex: 0 0 auto;
+  background: transparent;
+  box-shadow: none;
+}
+
+.iconBadge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .cardHeader h2 {
